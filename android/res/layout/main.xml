@@ -21,7 +21,9 @@
             android:layout_width="0pt"
             android:layout_height="wrap_content"
             android:layout_weight="4"
-            android:prompt="@string/line_spinner_prompt" />
+            android:prompt="@string/line_spinner_prompt" >
+            <!-- Preview: listitem=@android:layout/simple_spinner_item -->
+        </Spinner>
     </LinearLayout>
 
     <LinearLayout
@@ -41,7 +43,9 @@
             android:layout_width="0pt"
             android:layout_height="wrap_content"
             android:layout_weight="4"
-            android:prompt="@string/stop_spinner_prompt" />
+            android:prompt="@string/stop_spinner_prompt" >
+            <!-- Preview: listitem=@android:layout/simple_spinner_item -->
+        </Spinner>
     </LinearLayout>
 
     <Button

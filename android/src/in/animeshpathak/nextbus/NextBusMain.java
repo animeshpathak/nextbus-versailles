@@ -160,8 +160,8 @@ public class NextBusMain extends Activity {
 				Intent i = new Intent(Intent.ACTION_SEND);  
 				i.setType("message/rfc822") ; // use from live device
 				i.putExtra(Intent.EXTRA_EMAIL, new String[]{"animesh@gmail.com"});  
-				i.putExtra(Intent.EXTRA_SUBJECT,"[nextbus-versailles] Your suggestion: ");  
-				i.putExtra(Intent.EXTRA_TEXT,"Dear Animesh, ");  
+				i.putExtra(Intent.EXTRA_SUBJECT,"[nextbus-versailles] Feedback");  
+				i.putExtra(Intent.EXTRA_TEXT,"Bonjour, ");  
 				startActivity(Intent.createChooser(i, "Select your preferred email application."));
 			}
 		});

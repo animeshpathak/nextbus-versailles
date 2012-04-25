@@ -2,8 +2,10 @@
 <resources>
 	<string name="app_name">Bus Suivant</string>
 	<string name="update">Actualiser les Horaires</string>
-	<string name="line_info">Ligne: B</string>
+    <string name="feedbackbutton">Réaction</string>
+	<string name="line_info">Ligne:</string>
 	<string name="stop_name">Arrêt:</string>
 	<string name="stop_spinner_prompt">Choisir un arrêt</string>
+    <string name="line_spinner_prompt">Choisir un Ligne</string>
 	<string name="bus_times">Pas d\'infos. Appuyer sur le bouton ci-dessus.</string>
 </resources>
