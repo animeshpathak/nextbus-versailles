@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+<TextView  
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/line_info"
+    />
+    <LinearLayout android:orientation="horizontal"
+    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    >
+<TextView  
+    android:layout_width="wrap_content" 
+    android:layout_height="wrap_content" 
+    android:text="@string/stop_name"
+    />
+    
+    <Spinner 
+        android:id="@+id/stop_spinner"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:prompt="@string/stop_spinner_prompt"
+    />
+    
+    </LinearLayout>
+<Button  
+    android:id="@+id/update_button"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/update"
+    />
+<TextView  
+	android:id="@+id/bus_timings"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/bus_times"
+    />
+</LinearLayout>
