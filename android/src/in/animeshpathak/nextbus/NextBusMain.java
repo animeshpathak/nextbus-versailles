@@ -18,10 +18,15 @@
 package in.animeshpathak.nextbus;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.client.HttpClient;
@@ -31,11 +36,15 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.json.JSONException;
 
 
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Html;
@@ -61,15 +70,20 @@ public class NextBusMain extends Activity {
 	//The textview that holds the view
 	private TextView busTimingsView;
 
-
-	//TODO these arrays can come from XML files
-	final String[] stopNameArray = {"Berthier","Bourg","C.Commercial Parly 2","Cisterciens","Europe","Gare des Chantiers","Hôtel de Ville","I.N.R.I.A","Jasmin","La Celle","La Muette","Lamartine","Les Comtesses","Les trois Fontaines","Louis Pelin","Mairie","Moines","Noailles","Notre Dame","Passy","Pl du Marché Notre Dame","Place Simart","Place de la Loi","Ploix","Porchefontaine","Pottier","Providence","Préfecture","Redingote","Réservoirs","Sarraut","Stade A. Brunot",
-	};
-	//{"I.N.R.I.A","Versailles Chantiers"};
+	// To get new bus-lines use (e.g.): curl http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/AppelArret.php --data "ligne=00JLB" > 0JLB.json
+	// Holds the labels of the known bus lines
+	private String[] busLines = {};
 	
-	final String[] stopCodeArray = {"BERTH","BOURG","PARLY","CISTE","EUROP","GCHAN","HDVER","INRIA","JASMI","CELLE","MUETT","LMART","FNAC","L3F","PELLI","HORLO","MOINE","NOAIL","NDAME","PASSY","HRICH","PLSIM","PLLOI","PLOIX","PRCHE","POTTI","PVD","PREF","GENDA","RESER","SARRA","BRUNO"
-	}; //{"INRIA","GCHAN"};
+	// Holds the file-names of the bus-line data 
+	private String[] busLineAssets = {};
+	
+	//TODO these arrays can come from XML files
+	private String[] stopNameArray = {};
+	
+	private String[] stopCodeArray = {};
 
+	private int selectedLineID = 0;
+	
 	//ID into above arrays to find the stop
 	private int selectedStopID = 0;
 	
@@ -99,15 +113,35 @@ public class NextBusMain extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		try {
+			Resources resources = getResources();
+			AssetManager assetManager = resources.getAssets();
+			InputStream inputStream;
+			inputStream = assetManager.open("buslines.properties");
+			Properties properties = new Properties();
+		    properties.load(inputStream);
+		   
+		    
+		    int setSize = properties.size();
+		    busLines = properties.keySet().toArray(new String[setSize]);
+		    Arrays.sort(busLines, String.CASE_INSENSITIVE_ORDER);
+		    busLineAssets = new String[setSize];
+		    for (int i=0; i<setSize; i++) {
+		        busLineAssets[i] = (String) properties.get(busLines[i]);
+		    }
+		} catch (Exception e) {
+			Log.e(LOG_TAG,e.getMessage(),e);
+		}
+	    
 		setContentView(R.layout.main);
-
+		
 		busTimingsView = (TextView)findViewById(R.id.bus_timings);
 
 		//get the button
 		//set handler to launch a processing dialog
 		Button updateButton = (Button)findViewById(R.id.update_button);
 		updateButton.setOnClickListener(new OnClickListener() {
-
 			@Override
 			public void onClick(View v) {
 				busTimingsView.setText("");
@@ -119,14 +153,61 @@ public class NextBusMain extends Activity {
 			}
 		});
 
+		Button feedbackButton = (Button)findViewById(R.id.feedback_button);
+		feedbackButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent(Intent.ACTION_SEND);  
+				i.setType("message/rfc822") ; // use from live device
+				i.putExtra(Intent.EXTRA_EMAIL, new String[]{"animesh@gmail.com"});  
+				i.putExtra(Intent.EXTRA_SUBJECT,"[nextbus-versailles] Your suggestion: ");  
+				i.putExtra(Intent.EXTRA_TEXT,"Dear Animesh, ");  
+				startActivity(Intent.createChooser(i, "Select your preferred email application."));
+			}
+		});
 		
-		Spinner spinner = (Spinner) findViewById(R.id.stop_spinner);
-	    ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(this, android.R.layout.simple_spinner_item, stopNameArray);
-	    	
+		Spinner spinner = (Spinner) findViewById(R.id.line_spinner);
+		ArrayAdapter<CharSequence> adapterLine = new ArrayAdapter<CharSequence>(this, android.R.layout.simple_spinner_item, busLines);
+
+		adapterLine.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		spinner.setAdapter(adapterLine);
+		spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> view, View arg1,
+					int pos, long id) {
+				Log.d(LOG_TAG, "Position = "+pos);
+				Log.d(LOG_TAG,"ID = " +id);
+				selectedLineID = (int)id;
+				
+				Log.d(LOG_TAG,"I hope that the selected item "+view.getItemAtPosition(pos)+" is the same as " 
+						+ busLines[selectedLineID]);
+				
+				try {
+					Resources resources = getResources();
+					AssetManager assetManager = resources.getAssets();
+					BusLine bl = BusLine.parseJson(busLines[selectedLineID], assetManager.open(busLineAssets[selectedLineID]));
+					stopNameArray = bl.getNameArray();
+					stopCodeArray = bl.getCodeArray();
+					
+					ArrayAdapter<CharSequence> adapterStop = new ArrayAdapter<CharSequence>(NextBusMain.this, android.R.layout.simple_spinner_item, stopNameArray);
+					adapterStop.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+					Spinner s = (Spinner) findViewById(R.id.stop_spinner);
+					s.setAdapter(adapterStop);
+				} catch (Exception e) {
+					Log.e(LOG_TAG,e.getMessage(),e);
+				}
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> arg0) {
+				//do nothing
+			}
+		});
+		
+		spinner = (Spinner) findViewById(R.id.stop_spinner);
+	    
 //	    	ArrayAdapter.createFromResource(
 //	            this, R.array.planets_array, android.R.layout.simple_spinner_item);
-	    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-	    spinner.setAdapter(adapter);
 	    
 	    spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 
@@ -180,7 +261,7 @@ public class NextBusMain extends Activity {
 				List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 				Log.d(LOG_TAG, "Getting info for stop id " + selectedStopID + ", " +stopCodeArray[selectedStopID]);
 				nameValuePairs.add(new BasicNameValuePair("arret", stopCodeArray[selectedStopID]));
-				nameValuePairs.add(new BasicNameValuePair("ligne", "B"));
+				nameValuePairs.add(new BasicNameValuePair("ligne", busLines[selectedLineID]));
 				httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
 				Log.d(LOG_TAG,"starting POST request now");
