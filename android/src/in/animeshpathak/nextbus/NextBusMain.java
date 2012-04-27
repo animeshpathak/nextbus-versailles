@@ -197,7 +197,7 @@ public class NextBusMain extends Activity {
 				//set the line ID
 				selectedLineID = (int) id;
 				//reset the stop ID
-				selectedStopID = 0;
+				selectedStopID = 0; // not required, changing the adapter will also do this
 
 				Log.d(LOG_TAG,
 						"I hope that the selected item "
@@ -249,16 +249,20 @@ public class NextBusMain extends Activity {
 		Log.d(LOG_TAG,"entering onResume()");
 
 		// at this time, the UI elements have been created. Need to read
+		// It is best not to reuse references to views after pause (Android seems to create new objects)
+		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
 		// the shared preferences, and store them in local variables.
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
-		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
-
 		// then call the dropdowns to be properly displayed
 		showAndSelectLineSpinner();
-		showAndSelectStopSpinner();
 		
-
+		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
+		// Previous call to showAndSelectLineSpinner() has set selectedStopID to 0, need to reset it
+		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
+		// The adapter was already recreated in the previous call, doing this again will trigger position to change to 0 again
+		//showAndSelectStopSpinner();
+		stopSpinner.setSelection(stopAdapter.getPosition(stopNameArray[selectedStopID]), true);
 	}
 
 	@Override
@@ -278,7 +282,9 @@ public class NextBusMain extends Activity {
 	
 	private void showAndSelectLineSpinner(){
 		// now check if the stopName is not null. If so, set it properly.
-		lineSpinner.setSelection(lineAdapter.getPosition(busLines[selectedLineID]));
+		// apparently this does not work if animation parameter not set
+		// I think animation makes the change happen after the view is displayed (and not before). So it is an order problem
+		lineSpinner.setSelection(lineAdapter.getPosition(busLines[selectedLineID]), true);
 	}
 
 	/**
@@ -301,11 +307,6 @@ public class NextBusMain extends Activity {
 					.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
 			stopSpinner.setAdapter(stopAdapter);
-
-			// now check if the stopName is not null. If so, set it properly.
-			stopSpinner.setSelection(stopAdapter.getPosition(stopNameArray[selectedStopID]));
-			
-
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
 		}
