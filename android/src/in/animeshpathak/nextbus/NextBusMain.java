@@ -41,6 +41,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -77,15 +78,23 @@ public class NextBusMain extends Activity {
 	// Holds the file-names of the bus-line data
 	private String[] busLineAssets = {};
 
-	// TODO these arrays can come from XML files
 	private String[] stopNameArray = {};
 
 	private String[] stopCodeArray = {};
 
-	private int selectedLineID = 0;
+	/** The currently selected line */
+	private int selectedLineID;
 
 	// ID into above arrays to find the stop
-	private int selectedStopID = 0;
+	private int selectedStopID;
+	
+	
+	//UI elements
+	Spinner lineSpinner;
+	ArrayAdapter<CharSequence> lineAdapter;
+	Spinner stopSpinner;
+	ArrayAdapter<CharSequence> stopAdapter;
+	
 
 	/**
 	 * The Handler that will run the runnable which will then update the bus
@@ -113,6 +122,7 @@ public class NextBusMain extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Log.d(LOG_TAG,"entering onCreate()");
 
 		try {
 			Resources resources = getResources();
@@ -170,44 +180,32 @@ public class NextBusMain extends Activity {
 			}
 		});
 
-		Spinner spinner = (Spinner) findViewById(R.id.line_spinner);
-		ArrayAdapter<CharSequence> adapterLine = new ArrayAdapter<CharSequence>(
+		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
+		lineAdapter = new ArrayAdapter<CharSequence>(
 				this, android.R.layout.simple_spinner_item, busLines);
 
-		adapterLine
+		lineAdapter
 				.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-		spinner.setAdapter(adapterLine);
-		spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+		lineSpinner.setAdapter(lineAdapter);
+		lineSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
 			public void onItemSelected(AdapterView<?> view, View arg1, int pos,
 					long id) {
-				Log.d(LOG_TAG, "Position = " + pos);
-				Log.d(LOG_TAG, "ID = " + id);
+				Log.d(LOG_TAG,"lineSpinnerItemSelected!");
+				Log.d(LOG_TAG, "Line Position = " + pos);
+				Log.d(LOG_TAG, "Line ID = " + id);
+				//set the line ID
 				selectedLineID = (int) id;
+				//reset the stop ID
+				selectedStopID = 0;
 
 				Log.d(LOG_TAG,
 						"I hope that the selected item "
 								+ view.getItemAtPosition(pos)
 								+ " is the same as " + busLines[selectedLineID]);
 
-				try {
-					Resources resources = getResources();
-					AssetManager assetManager = resources.getAssets();
-					BusLine bl = BusLine.parseJson(busLines[selectedLineID],
-							assetManager.open(busLineAssets[selectedLineID]));
-					stopNameArray = bl.getNameArray();
-					stopCodeArray = bl.getCodeArray();
+				showAndSelectStopSpinner();
 
-					ArrayAdapter<CharSequence> adapterStop = new ArrayAdapter<CharSequence>(
-							NextBusMain.this,
-							android.R.layout.simple_spinner_item, stopNameArray);
-					adapterStop
-							.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-					Spinner s = (Spinner) findViewById(R.id.stop_spinner);
-					s.setAdapter(adapterStop);
-				} catch (Exception e) {
-					Log.e(LOG_TAG, e.getMessage(), e);
-				}
 			}
 
 			@Override
@@ -216,19 +214,17 @@ public class NextBusMain extends Activity {
 			}
 		});
 
-		spinner = (Spinner) findViewById(R.id.stop_spinner);
+		lineSpinner = (Spinner) findViewById(R.id.stop_spinner);
+		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
 
-		// ArrayAdapter.createFromResource(
-		// this, R.array.planets_array, android.R.layout.simple_spinner_item);
-
-		spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+		stopSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 
 			@Override
 			public void onItemSelected(AdapterView<?> view, View arg1, int pos,
 					long id) {
-				// TODO Auto-generated method stub
-				Log.d(LOG_TAG, "Position = " + pos);
-				Log.d(LOG_TAG, "ID = " + id);
+				Log.d(LOG_TAG,"stopSpinnerItemSelected!");
+				Log.d(LOG_TAG, "Stop Position = " + pos);
+				Log.d(LOG_TAG, "Stop ID = " + id);
 				selectedStopID = (int) id;
 
 				Log.d(LOG_TAG,
@@ -244,7 +240,75 @@ public class NextBusMain extends Activity {
 			}
 
 		});
+		
+	}
 
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(LOG_TAG,"entering onResume()");
+
+		// at this time, the UI elements have been created. Need to read
+		// the shared preferences, and store them in local variables.
+		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
+		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
+
+		// then call the dropdowns to be properly displayed
+		showAndSelectLineSpinner();
+		showAndSelectStopSpinner();
+		
+
+	}
+
+	@Override
+	protected void onPause() {
+		Log.d(LOG_TAG,"entering onPause()");
+		super.onPause();
+
+		// at this time, store the local variables pointing to the indices
+		// of the line and stop, then return
+		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putInt(Constants.SELECTED_LINE, selectedLineID);
+		editor.putInt(Constants.SELECTED_STOP, selectedStopID);
+		editor.commit();
+
+	}
+	
+	private void showAndSelectLineSpinner(){
+		// now check if the stopName is not null. If so, set it properly.
+		lineSpinner.setSelection(lineAdapter.getPosition(busLines[selectedLineID]));
+	}
+
+	/**
+	 * Populates the stop spinner with the list of stops for a particular line,
+	 * using the Object variables for selected line and stop ID
+	 */
+	private void showAndSelectStopSpinner() {
+		try {
+			Resources resources = getResources();
+			AssetManager assetManager = resources.getAssets();
+			BusLine bl = BusLine.parseJson(busLines[selectedLineID],
+					assetManager.open(busLineAssets[selectedLineID]));
+			stopNameArray = bl.getNameArray();
+			stopCodeArray = bl.getCodeArray();
+
+			stopAdapter = new ArrayAdapter<CharSequence>(
+					NextBusMain.this, android.R.layout.simple_spinner_item,
+					stopNameArray);
+			stopAdapter
+					.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+			stopSpinner.setAdapter(stopAdapter);
+
+			// now check if the stopName is not null. If so, set it properly.
+			stopSpinner.setSelection(stopAdapter.getPosition(stopNameArray[selectedStopID]));
+			
+
+		} catch (Exception e) {
+			Log.e(LOG_TAG, e.getMessage(), e);
+		}
 	}
 
 	@Override
@@ -259,7 +323,7 @@ public class NextBusMain extends Activity {
 		}
 	}
 
-	//TODO use AsyncTask
+	// TODO use AsyncTask
 	class BusInfoGetter extends Thread {
 
 		// This executes a POST and gets the actual info from the website
