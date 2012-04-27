@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="app_name">Bus Suivant</string>
+	<string name="home_activity_title">Bus Suivant Versailles</string>
 	<string name="update">Actualiser les Horaires</string>
     <string name="feedbackbutton">Retour</string>
 	<string name="line_info">Ligne:</string>
