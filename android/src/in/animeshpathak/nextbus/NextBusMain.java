@@ -36,6 +36,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.json.JSONException;
+import org.xml.sax.XMLReader;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -46,7 +47,13 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.Editable;
 import android.text.Html;
+import android.text.Html.TagHandler;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
+import android.text.style.StrikethroughSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -116,10 +123,68 @@ public class NextBusMain extends Activity {
 					+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
 							DateFormat.SHORT).format(new Date())
 					+ "\nThe server said...\n");
-			CharSequence serverResponseInChars = Html.fromHtml(serverResponse);
-			busTimingsView.append(serverResponseInChars);
+			CharSequence serverResponseInChars = Html.fromHtml(serverResponse, null, new TagHandler() {
+				@Override
+				public void handleTag(boolean opening, String tag, Editable output,
+						XMLReader xmlReader) {
+					if(tag.equals("td") && !opening)
+						output.append("\r\n");
+				}
+			});
+			busTimingsView.append(removeExcessBlankLines(serverResponseInChars));
 		}
 	};
+	
+	/**
+	 *  Thanks to Lorne Laliberte
+	 *  http://codereview.stackexchange.com/questions/3099/android-remove-useless-whitespace-from-styled-string
+	 *  
+	 * @param source
+	 * @return
+	 */
+	public static CharSequence removeExcessBlankLines(CharSequence source) {
+
+	    if(source == null)
+	        return "";
+
+	    int newlineStart = -1;
+	    int nbspStart = -1;
+	    int consecutiveNewlines = 0;
+	    SpannableStringBuilder ssb = new SpannableStringBuilder(source);
+	    for(int i = 0; i < ssb.length(); ++i) {
+	        final char c = ssb.charAt(i);
+	        if(c == '\n') {
+	            if(consecutiveNewlines == 0)
+	                newlineStart = i;
+
+	            ++consecutiveNewlines;
+	            nbspStart = -1;
+	        }
+	        else if(c == '\u00A0') {
+	            if(nbspStart == -1)
+	                nbspStart = i;
+	        }
+	        else if(consecutiveNewlines > 0) {
+
+	            // note: also removes lines containing only whitespace,
+	            //       or nbsp; except at the beginning of a line
+	            if( !Character.isWhitespace(c) && c != '\u00A0') {
+
+	                // we've reached the end
+	                if(consecutiveNewlines > 2) {
+	                    // replace the many \n with one
+	                    ssb.replace(newlineStart, nbspStart > newlineStart ? nbspStart : i, "\n");
+	                    i -= i - newlineStart;
+	                }
+
+	                consecutiveNewlines = 0;
+	                nbspStart = -1;
+	            }
+	        }
+	    }
+
+	    return ssb;
+	}
 
 	/** Called when the activity is first created. */
 	@Override
