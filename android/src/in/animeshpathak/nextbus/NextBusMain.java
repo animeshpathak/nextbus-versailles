@@ -391,6 +391,19 @@ public class NextBusMain extends Activity {
 			return null;
 		}
 	}
+	
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		switch (id) {
+		case DIALOG_GETTING_BUS_INFO:
+			Dialog d = new ProgressDialog(NextBusMain.this);
+			d.setTitle("Getting latest bus timings. Please wait");
+			return d;
+		default:
+			return null;
+		}
+	}
+	
 
 	// TODO use AsyncTask
 	class BusInfoGetter extends Thread {
