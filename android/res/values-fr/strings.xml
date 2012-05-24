@@ -8,4 +8,8 @@
 	<string name="stop_spinner_prompt">Choisir un arrêt</string>
     <string name="line_spinner_prompt">Choisir un ligne</string>
 	<string name="bus_times">Pas d\'infos. Appuyer sur le bouton ci-dessus.</string>
+	<string name="bus_text_direction">En direction de</string>
+	<string name="bus_text_theoretical">Théorique</string>
+    <string name="bus_text_approaching">En approche</string>
+    <string name="bus_text_last">Dernier bus</string>
 </resources>

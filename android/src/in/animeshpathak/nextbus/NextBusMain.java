@@ -16,27 +16,18 @@
 
 package in.animeshpathak.nextbus;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
+import in.animeshpathak.nextbus.timetable.PhebusArrivalQuery;
+
 import java.io.InputStream;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.Properties;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.json.JSONException;
-import org.xml.sax.XMLReader;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -47,13 +38,6 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.Editable;
-import android.text.Html;
-import android.text.Html.TagHandler;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
-import android.text.TextUtils;
-import android.text.style.StrikethroughSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -74,7 +58,7 @@ public class NextBusMain extends Activity {
 	private static String LOG_TAG = "NEXTBUS";
 
 	// The response from the server
-	private String serverResponse;
+	private BusArrivalQuery serverResponse;
 
 	// The textview that holds the view
 	private TextView busTimingsView;
@@ -97,14 +81,12 @@ public class NextBusMain extends Activity {
 
 	// ID into above arrays to find the stop
 	private int selectedStopID;
-	
-	
-	//UI elements
+
+	// UI elements
 	Spinner lineSpinner;
 	ArrayAdapter<CharSequence> lineAdapter;
 	Spinner stopSpinner;
 	ArrayAdapter<CharSequence> stopAdapter;
-	
 
 	/**
 	 * The Handler that will run the runnable which will then update the bus
@@ -117,80 +99,26 @@ public class NextBusMain extends Activity {
 			dismissDialog(DIALOG_GETTING_BUS_INFO);
 
 			Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
-			Log.d(LOG_TAG, serverResponse);
+			// Log.d(LOG_TAG, serverResponse);
 
 			busTimingsView.append("\nLast Updated at: "
 					+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
 							DateFormat.SHORT).format(new Date())
 					+ "\nThe server said...\n");
-			CharSequence serverResponseInChars = Html.fromHtml(serverResponse, null, new TagHandler() {
-				@Override
-				public void handleTag(boolean opening, String tag, Editable output,
-						XMLReader xmlReader) {
-					if(tag.equals("td") && !opening)
-						output.append("\r\n");
-				}
-			});
-			busTimingsView.append(removeExcessBlankLines(serverResponseInChars));
+			if (serverResponse != null && serverResponse.isValid())
+				busTimingsView.append(serverResponse
+						.getFormattedText(NextBusMain.this));
+			else if (serverResponse != null)
+				busTimingsView.append(serverResponse.getFallbackText());
+
 		}
 	};
-	
-	/**
-	 *  Thanks to Lorne Laliberte
-	 *  http://codereview.stackexchange.com/questions/3099/android-remove-useless-whitespace-from-styled-string
-	 *  
-	 * @param source
-	 * @return
-	 */
-	public static CharSequence removeExcessBlankLines(CharSequence source) {
-
-	    if(source == null)
-	        return "";
-
-	    int newlineStart = -1;
-	    int nbspStart = -1;
-	    int consecutiveNewlines = 0;
-	    SpannableStringBuilder ssb = new SpannableStringBuilder(source);
-	    for(int i = 0; i < ssb.length(); ++i) {
-	        final char c = ssb.charAt(i);
-	        if(c == '\n') {
-	            if(consecutiveNewlines == 0)
-	                newlineStart = i;
-
-	            ++consecutiveNewlines;
-	            nbspStart = -1;
-	        }
-	        else if(c == '\u00A0') {
-	            if(nbspStart == -1)
-	                nbspStart = i;
-	        }
-	        else if(consecutiveNewlines > 0) {
-
-	            // note: also removes lines containing only whitespace,
-	            //       or nbsp; except at the beginning of a line
-	            if( !Character.isWhitespace(c) && c != '\u00A0') {
-
-	                // we've reached the end
-	                if(consecutiveNewlines > 2) {
-	                    // replace the many \n with one
-	                    ssb.replace(newlineStart, nbspStart > newlineStart ? nbspStart : i, "\n");
-	                    i -= i - newlineStart;
-	                }
-
-	                consecutiveNewlines = 0;
-	                nbspStart = -1;
-	            }
-	        }
-	    }
-
-	    return ssb;
-	}
 
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.d(LOG_TAG,"entering onCreate()");
+		Log.d(LOG_TAG, "entering onCreate()");
 
 		try {
 			Resources resources = getResources();
@@ -249,8 +177,8 @@ public class NextBusMain extends Activity {
 		});
 
 		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
-		lineAdapter = new ArrayAdapter<CharSequence>(
-				this, android.R.layout.simple_spinner_item, busLines);
+		lineAdapter = new ArrayAdapter<CharSequence>(this,
+				android.R.layout.simple_spinner_item, busLines);
 
 		lineAdapter
 				.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -259,13 +187,14 @@ public class NextBusMain extends Activity {
 			@Override
 			public void onItemSelected(AdapterView<?> view, View arg1, int pos,
 					long id) {
-				Log.d(LOG_TAG,"lineSpinnerItemSelected!");
+				Log.d(LOG_TAG, "lineSpinnerItemSelected!");
 				Log.d(LOG_TAG, "Line Position = " + pos);
 				Log.d(LOG_TAG, "Line ID = " + id);
-				//set the line ID
+				// set the line ID
 				selectedLineID = (int) id;
-				//reset the stop ID
-				selectedStopID = 0; // not required, changing the adapter will also do this
+				// reset the stop ID
+				selectedStopID = 0; // not required, changing the adapter will
+									// also do this
 
 				Log.d(LOG_TAG,
 						"I hope that the selected item "
@@ -290,7 +219,7 @@ public class NextBusMain extends Activity {
 			@Override
 			public void onItemSelected(AdapterView<?> view, View arg1, int pos,
 					long id) {
-				Log.d(LOG_TAG,"stopSpinnerItemSelected!");
+				Log.d(LOG_TAG, "stopSpinnerItemSelected!");
 				Log.d(LOG_TAG, "Stop Position = " + pos);
 				Log.d(LOG_TAG, "Stop ID = " + id);
 				selectedStopID = (int) id;
@@ -308,34 +237,38 @@ public class NextBusMain extends Activity {
 			}
 
 		});
-		
+
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.d(LOG_TAG,"entering onResume()");
+		Log.d(LOG_TAG, "entering onResume()");
 
 		// at this time, the UI elements have been created. Need to read
-		// It is best not to reuse references to views after pause (Android seems to create new objects)
+		// It is best not to reuse references to views after pause (Android
+		// seems to create new objects)
 		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
 		// the shared preferences, and store them in local variables.
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
 		// then call the dropdowns to be properly displayed
 		showAndSelectLineSpinner();
-		
+
 		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
-		// Previous call to showAndSelectLineSpinner() has set selectedStopID to 0, need to reset it
+		// Previous call to showAndSelectLineSpinner() has set selectedStopID to
+		// 0, need to reset it
 		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
-		// The adapter was already recreated in the previous call, doing this again will trigger position to change to 0 again
-		//showAndSelectStopSpinner();
-		stopSpinner.setSelection(stopAdapter.getPosition(stopNameArray[selectedStopID]), true);
+		// The adapter was already recreated in the previous call, doing this
+		// again will trigger position to change to 0 again
+		// showAndSelectStopSpinner();
+		stopSpinner.setSelection(
+				stopAdapter.getPosition(stopNameArray[selectedStopID]), true);
 	}
 
 	@Override
 	protected void onPause() {
-		Log.d(LOG_TAG,"entering onPause()");
+		Log.d(LOG_TAG, "entering onPause()");
 		super.onPause();
 
 		// at this time, store the local variables pointing to the indices
@@ -347,12 +280,14 @@ public class NextBusMain extends Activity {
 		editor.commit();
 
 	}
-	
-	private void showAndSelectLineSpinner(){
+
+	private void showAndSelectLineSpinner() {
 		// now check if the stopName is not null. If so, set it properly.
 		// apparently this does not work if animation parameter not set
-		// I think animation makes the change happen after the view is displayed (and not before). So it is an order problem
-		lineSpinner.setSelection(lineAdapter.getPosition(busLines[selectedLineID]), true);
+		// I think animation makes the change happen after the view is displayed
+		// (and not before). So it is an order problem
+		lineSpinner.setSelection(
+				lineAdapter.getPosition(busLines[selectedLineID]), true);
 	}
 
 	/**
@@ -368,9 +303,8 @@ public class NextBusMain extends Activity {
 			stopNameArray = bl.getNameArray();
 			stopCodeArray = bl.getCodeArray();
 
-			stopAdapter = new ArrayAdapter<CharSequence>(
-					NextBusMain.this, android.R.layout.simple_spinner_item,
-					stopNameArray);
+			stopAdapter = new ArrayAdapter<CharSequence>(NextBusMain.this,
+					android.R.layout.simple_spinner_item, stopNameArray);
 			stopAdapter
 					.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
@@ -391,7 +325,7 @@ public class NextBusMain extends Activity {
 			return null;
 		}
 	}
-	
+
 	@Override
 	protected Dialog onCreateDialog(int id) {
 		switch (id) {
@@ -403,51 +337,27 @@ public class NextBusMain extends Activity {
 			return null;
 		}
 	}
-	
 
 	// TODO use AsyncTask
 	class BusInfoGetter extends Thread {
 
 		// This executes a POST and gets the actual info from the website
 		// Thanks to http://www.androidsnippets.org/snippets/36/
-		private String getBusTimings() {
+		private BusArrivalQuery getBusTimings() {
 			// Create a new HttpClient and Post Header
 			HttpClient httpclient = new DefaultHttpClient();
 			HttpPost httppost = new HttpPost(
 					"http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/code_temps_reel.php");
-
 			String errorMessage = "";
 
 			try {
-				// Add your data
-				List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(
-						2);
-				Log.d(LOG_TAG, "Getting info for stop id " + selectedStopID
-						+ ", " + stopCodeArray[selectedStopID]);
-				nameValuePairs.add(new BasicNameValuePair("arret",
-						stopCodeArray[selectedStopID]));
-				nameValuePairs.add(new BasicNameValuePair("ligne",
-						busLines[selectedLineID]));
-				httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-				Log.d(LOG_TAG, "starting POST request now");
-				// Execute HTTP Post Request
-				HttpResponse response = httpclient.execute(httppost);
-				Log.d(LOG_TAG, "response received");
-
-				ByteArrayOutputStream myBaos = new ByteArrayOutputStream();
-
-				response.getEntity().writeTo(myBaos);
-				String escapedString = myBaos.toString();
-				return StringEscapeUtils.unescapeJavaScript(escapedString);
-
+				return new PhebusArrivalQuery(busLines[selectedLineID],
+						stopCodeArray[selectedStopID]);
 			} catch (Exception e) {
 				Log.e(LOG_TAG, e.getMessage(), e);
 				errorMessage = e.getMessage();
 			}
-
-			return "An error (\"" + errorMessage
-					+ "\") happenned in the query. Please see logs.";
+			return null;
 		}
 
 		@Override
@@ -470,6 +380,7 @@ public class NextBusMain extends Activity {
 		inflater.inflate(R.menu.mainmenu, menu);
 		return true;
 	}
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle item selection
