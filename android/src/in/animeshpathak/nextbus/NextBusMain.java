@@ -101,10 +101,10 @@ public class NextBusMain extends Activity {
 			Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
 			// Log.d(LOG_TAG, serverResponse);
 
-			busTimingsView.append("\nLast Updated at: "
+			busTimingsView.append("\n"+getString(R.string.last_updated_at)+": "
 					+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
 							DateFormat.SHORT).format(new Date())
-					+ "\nThe server said...\n");
+					+ "\n"+getString(R.string.server_said)+"...\n");
 			if (serverResponse != null && serverResponse.isValid())
 				busTimingsView.append(serverResponse
 						.getFormattedText(NextBusMain.this));
@@ -318,8 +318,8 @@ public class NextBusMain extends Activity {
 	protected Dialog onCreateDialog(int id, Bundle args) {
 		switch (id) {
 		case DIALOG_GETTING_BUS_INFO:
-			Dialog d = new ProgressDialog(NextBusMain.this);
-			d.setTitle("Getting latest bus timings. Please wait");
+			ProgressDialog d = new ProgressDialog(NextBusMain.this);
+			d.setMessage(getString(R.string.getting_latest_times) + "...");
 			return d;
 		default:
 			return null;
@@ -330,8 +330,8 @@ public class NextBusMain extends Activity {
 	protected Dialog onCreateDialog(int id) {
 		switch (id) {
 		case DIALOG_GETTING_BUS_INFO:
-			Dialog d = new ProgressDialog(NextBusMain.this);
-			d.setTitle("Getting latest bus timings. Please wait");
+			ProgressDialog d = new ProgressDialog(NextBusMain.this);
+			d.setMessage(getString(R.string.getting_latest_times) + "...");
 			return d;
 		default:
 			return null;
