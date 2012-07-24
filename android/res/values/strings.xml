@@ -11,7 +11,7 @@
     <string name="stop_spinner_prompt">Pick a Stop</string>
     <string name="line_spinner_prompt">Pick a Bus Line</string>
     <string name="bus_times">No info. Press the button above.</string>
-    <string name="version_name">1.2.5</string>
+    <string name="version_name">1.2.5-JB-fix</string>
     <string name="dev_team_title">Developer Team</string>
     <string name="dev_names">Emil Andriescu\nAnimesh Pathak</string>
     <string name="localization_title">Localization</string>

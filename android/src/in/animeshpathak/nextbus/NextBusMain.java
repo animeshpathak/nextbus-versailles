@@ -120,6 +120,43 @@ public class NextBusMain extends Activity {
 		super.onCreate(savedInstanceState);
 		Log.d(LOG_TAG, "entering onCreate()");
 
+
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(LOG_TAG, "entering onResume()");
+
+		// at this time, the UI elements have been created. Need to read
+		// It is best not to reuse references to views after pause (Android
+		// seems to create new objects)
+		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
+		// the shared preferences, and store them in local variables.
+		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
+		// then call the dropdowns to be properly displayed
+		showAndSelectLineSpinner();
+
+		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
+		// Previous call to showAndSelectLineSpinner() has set selectedStopID to
+		// 0, need to reset it
+		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
+		// The adapter was already recreated in the previous call, doing this
+		// again will trigger position to change to 0 again
+		
+		//AP ignoring the advice above for Issue #10, let's see.
+		
+		showAndSelectStopSpinner();
+		stopSpinner.setSelection(
+				stopAdapter.getPosition(stopNameArray[selectedStopID]), true);
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		Log.d(LOG_TAG, "entering onStart()");
+
 		try {
 			Resources resources = getResources();
 			AssetManager assetManager = resources.getAssets();
@@ -237,33 +274,6 @@ public class NextBusMain extends Activity {
 			}
 
 		});
-
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		Log.d(LOG_TAG, "entering onResume()");
-
-		// at this time, the UI elements have been created. Need to read
-		// It is best not to reuse references to views after pause (Android
-		// seems to create new objects)
-		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
-		// the shared preferences, and store them in local variables.
-		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
-		// then call the dropdowns to be properly displayed
-		showAndSelectLineSpinner();
-
-		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
-		// Previous call to showAndSelectLineSpinner() has set selectedStopID to
-		// 0, need to reset it
-		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
-		// The adapter was already recreated in the previous call, doing this
-		// again will trigger position to change to 0 again
-		// showAndSelectStopSpinner();
-		stopSpinner.setSelection(
-				stopAdapter.getPosition(stopNameArray[selectedStopID]), true);
 	}
 
 	@Override
