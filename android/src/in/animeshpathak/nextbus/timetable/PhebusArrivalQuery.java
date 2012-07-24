@@ -38,6 +38,7 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 	private static final String[] APP = 	{"approach1","approach2","approach3","approach4"};
 	private static final String[] LAST = 	{"dernier1","dernier2","dernier3","dernier4"};
 	
+	// Limited to results having 2 arrivals
 	private static final NamedPattern patt = NamedPattern.compile("" +
 			".*" +
 			"Code ligne : [\\w]+[^\\w]+" +
@@ -65,6 +66,27 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 						"(?<minute4>\\d+) min)|" +
 						"(?<static4>\\d+h\\d+)|" +
 						"(?<approach4>Bus en approche))" +
+			")?" +
+			".*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	
+	// Fallback limited to results having 1 arrival
+	private static final NamedPattern patt2 = NamedPattern.compile("" +
+			".*" +
+			"Code ligne : [\\w]+[^\\w]+" +
+			"(?:En direction de (?<direction1>[^\\n\\r\\*]+))" +
+			"[^\\d\\*\\w]*(?<dernier1>Dernier bus\\s*)?(?<star1>[\\*]+)?" +
+				"(?:(?:" +
+					"(?<minute1>\\d+) min)|" +
+					"(?<static1>\\d+h\\d+)|" +
+					"(?<approach1>Bus en approche))" +
+			"[^\\w]+" +
+			"(?:" +
+				"(?:En direction de (?<direction2>[^\\n\\r\\*]+))" +
+				"[^\\d\\*\\w]*(?<dernier3>Dernier bus\\s*)?(?<star3>[\\*]+)?" +
+					"(?:(?:" +
+						"(?<minute3>\\d+) min)|" +
+						"(?<static3>\\d+h\\d+)|" +
+						"(?<approach3>Bus en approche))" +
 			")?" +
 			".*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 	
@@ -160,6 +182,11 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 			
 			String input = queryRes.toString();
 			NamedMatcher matcher = patt.matcher(input);
+			
+			// Fallback for the case where the result has one bus arrival only
+			if(!matcher.matches())
+				matcher = patt2.matcher(input);
+			
 			if(matcher.matches()){
 				Map<String, String> groups = matcher.namedGroups();
 				if(groups.get(DIR[0]) != null){

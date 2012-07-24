@@ -9,6 +9,7 @@ import java.util.Set;
 import android.content.Context;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
+import android.text.format.DateUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.TextAppearanceSpan;
 
@@ -36,11 +37,17 @@ public abstract class BusArrivalQuery {
 			appendWithStyle(ssb, c.getString(R.string.bus_text_direction) + " " + entry.getKey() + "\n",
 					new TextAppearanceSpan(c, R.style.DefaultBusTextAppearance));
 			for (int i = 0; i < entry.getValue().arrivalMillis.length; i++) {
-				int totalMinutes = entry.getValue().arrivalMillis[i] / 60 / 1000;
-				appendWithStyle(
-						ssb,
-						"\t" + totalMinutes + "min ",
-						new TextAppearanceSpan(c, R.style.BlueBusTextAppearance));
+				int totalMillis = entry.getValue().arrivalMillis[i];
+				
+				ssb.append("\t");
+				
+				// If bus is not approaching we print the time
+				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_APPROACHING) == 0){
+					appendWithStyle(
+							ssb,
+							" " + formatTimeDelta(totalMillis),
+							new TextAppearanceSpan(c, R.style.BlueBusTextAppearance));
+				}
 				String mention = "";
 				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_APPROACHING) != 0){
 					mention += " " + c.getString(R.string.bus_text_approaching);
@@ -58,6 +65,12 @@ public abstract class BusArrivalQuery {
 					R.style.DefaultBusTextAppearance));
 		}
 		return ssb;
+	}
+	
+	// Thanks to Android for having relative time Localized
+	public CharSequence formatTimeDelta(int totalMillis){
+		long now = System.currentTimeMillis();
+		return DateUtils.getRelativeTimeSpanString(now + totalMillis, now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
 	}
 
 	/**
