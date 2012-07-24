@@ -24,6 +24,7 @@ import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -101,10 +102,12 @@ public class NextBusMain extends Activity {
 			Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
 			// Log.d(LOG_TAG, serverResponse);
 
-			busTimingsView.append("\n"+getString(R.string.last_updated_at)+": "
+			busTimingsView.append("\n"
+					+ getString(R.string.last_updated_at)
+					+ ": "
 					+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
-							DateFormat.SHORT).format(new Date())
-					+ "\n"+getString(R.string.server_said)+"...\n");
+							DateFormat.SHORT).format(new Date()) + "\n"
+					+ getString(R.string.server_said) + "...\n");
 			if (serverResponse != null && serverResponse.isValid())
 				busTimingsView.append(serverResponse
 						.getFormattedText(NextBusMain.this));
@@ -114,48 +117,13 @@ public class NextBusMain extends Activity {
 		}
 	};
 
+	private AtomicBoolean lineSpinnerHandlerFirstCall = new AtomicBoolean(false);
+
 	/** Called when the activity is first created. */
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		Log.d(LOG_TAG, "entering onCreate()");
-
-
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		Log.d(LOG_TAG, "entering onResume()");
-
-		// at this time, the UI elements have been created. Need to read
-		// It is best not to reuse references to views after pause (Android
-		// seems to create new objects)
-		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
-		// the shared preferences, and store them in local variables.
-		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
-		// then call the dropdowns to be properly displayed
-		showAndSelectLineSpinner();
-
-		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
-		// Previous call to showAndSelectLineSpinner() has set selectedStopID to
-		// 0, need to reset it
-		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
-		// The adapter was already recreated in the previous call, doing this
-		// again will trigger position to change to 0 again
-		
-		//AP ignoring the advice above for Issue #10, let's see.
-		
-		showAndSelectStopSpinner();
-		stopSpinner.setSelection(
-				stopAdapter.getPosition(stopNameArray[selectedStopID]), true);
-	}
-	
-	@Override
-	protected void onStart() {
+	public void onStart() {
 		super.onStart();
-		Log.d(LOG_TAG, "entering onStart()");
+		Log.d(LOG_TAG, "entering onCreate()");
 
 		try {
 			Resources resources = getResources();
@@ -230,8 +198,9 @@ public class NextBusMain extends Activity {
 				// set the line ID
 				selectedLineID = (int) id;
 				// reset the stop ID
-				selectedStopID = 0; // not required, changing the adapter will
-									// also do this
+				if (!lineSpinnerHandlerFirstCall.getAndSet(false)) {
+					selectedStopID = 0;
+				}
 
 				Log.d(LOG_TAG,
 						"I hope that the selected item "
@@ -274,6 +243,29 @@ public class NextBusMain extends Activity {
 			}
 
 		});
+
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(LOG_TAG, "entering onResume()");
+
+		// at this time, the UI elements have been created. Need to read
+		// It is best not to reuse references to views after pause (Android
+		// seems to create new objects)
+		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
+		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
+		// the shared preferences, and store them in local variables.
+		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
+		// ! The adapter was not created on JellyBean, because of async call =>
+		// ArrayOutOfBoundsException
+		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
+		lineSpinnerHandlerFirstCall.set(true);
+		
+		// sync or async we call it here
+		showAndSelectLineSpinner();
 	}
 
 	@Override
@@ -306,6 +298,9 @@ public class NextBusMain extends Activity {
 	 */
 	private void showAndSelectStopSpinner() {
 		try {
+			// we store the initial position, in order to go back after adapter
+			// reset
+			int stopIdBeforeReset = selectedStopID;
 			Resources resources = getResources();
 			AssetManager assetManager = resources.getAssets();
 			BusLine bl = BusLine.parseJson(busLines[selectedLineID],
@@ -319,6 +314,9 @@ public class NextBusMain extends Activity {
 					.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
 			stopSpinner.setAdapter(stopAdapter);
+			stopSpinner.setSelection(
+					stopAdapter.getPosition(stopNameArray[stopIdBeforeReset]),
+					true);
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
 		}
