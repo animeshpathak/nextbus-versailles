@@ -117,13 +117,15 @@ public class NextBusMain extends Activity {
 		}
 	};
 
+	// This atomic boolean lets us solve the non-determinism in the exact time
+	// when the UI element (spinner) will get updated.
 	private AtomicBoolean lineSpinnerHandlerFirstCall = new AtomicBoolean(false);
 
-	/** Called when the activity is first created. */
+	/** Called when the activity is first started. */
 	@Override
 	public void onStart() {
 		super.onStart();
-		Log.d(LOG_TAG, "entering onCreate()");
+		Log.d(LOG_TAG, "entering onStart()");
 
 		try {
 			Resources resources = getResources();
@@ -263,7 +265,7 @@ public class NextBusMain extends Activity {
 		// ArrayOutOfBoundsException
 		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
 		lineSpinnerHandlerFirstCall.set(true);
-		
+
 		// sync or async we call it here
 		showAndSelectLineSpinner();
 	}
