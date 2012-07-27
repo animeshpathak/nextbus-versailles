@@ -6,6 +6,8 @@
     <string name="about_app_title">About</string>
     <string name="update">Update Bus Timings</string>
     <string name="feedbackbutton">Feedback</string>
+    <string name="favoritebutton">Favorites</string>
+    <string name="addtofavbutton">Add this stop</string>
     <string name="line_info">Line:</string>
     <string name="stop_name">Stop:</string>
     <string name="stop_spinner_prompt">Pick a Stop</string>

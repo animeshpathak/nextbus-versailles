@@ -71,6 +71,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/feedbackbutton" />
+        
+        <Button
+        android:layout_alignParentBottom="true"
+        android:id="@+id/favorites_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/favoritebutton" />
 
         <TextView
             android:id="@+id/version_text"
