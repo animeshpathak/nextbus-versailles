@@ -283,6 +283,9 @@ public class NextBusMain extends Activity {
 		editor.putInt(Constants.SELECTED_STOP, selectedStopID);
 		editor.commit();
 
+		// On screen lock/unlock, the line spinner onItemSelected callback
+		// gets called before finishing onResume() (does not happen in DEBUG mode)
+		lineSpinnerHandlerFirstCall.set(true);
 	}
 
 	private void showAndSelectLineSpinner() {
