@@ -16,6 +16,9 @@
 
 package in.animeshpathak.nextbus;
 
+import in.animeshpathak.nextbus.favorites.Favorite;
+import in.animeshpathak.nextbus.favorites.FavoriteDialog;
+import in.animeshpathak.nextbus.favorites.FavoriteDialog.OnFavoriteSelectedListener;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.PhebusArrivalQuery;
 
@@ -209,7 +212,7 @@ public class NextBusMain extends Activity {
 								+ view.getItemAtPosition(pos)
 								+ " is the same as " + busLines[selectedLineID]);
 
-				showAndSelectStopSpinner();
+				showAndSelectStopSpinner(selectedLineID);
 
 			}
 
@@ -244,6 +247,36 @@ public class NextBusMain extends Activity {
 
 		});
 
+		Button favoriteButton = (Button) findViewById(R.id.favorites_button);
+		favoriteButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View arg0) {
+				final Button updateButton = (Button) findViewById(R.id.update_button);
+				FavoriteDialog fd = new FavoriteDialog(NextBusMain.this,
+						new OnFavoriteSelectedListener() {
+							@Override
+							public void favoriteSelected(Favorite fav) {
+								selectedLineID = lineAdapter.getPosition(fav
+										.getLine());
+								showAndSelectStopSpinner(selectedLineID);
+								selectedStopID = stopAdapter.getPosition(fav
+										.getStop());
+
+								busTimingsView.setText("");
+								// start the new thread
+								new BusInfoGetter().start();
+								// show the progress dialog
+								showDialog(DIALOG_GETTING_BUS_INFO);
+
+								lineSpinnerHandlerFirstCall.set(true);
+								// sync or async we call it here
+								showAndSelectLineSpinner();
+								stopSpinner.setSelection(selectedStopID);
+							}
+						}, lineSpinner.getSelectedItem().toString(),
+						stopSpinner.getSelectedItem().toString());
+			}
+		});
 	}
 
 	@Override
@@ -282,7 +315,8 @@ public class NextBusMain extends Activity {
 		editor.commit();
 
 		// On screen lock/unlock, the line spinner onItemSelected callback
-		// gets called before finishing onResume() (does not happen in DEBUG mode)
+		// gets called before finishing onResume() (does not happen in DEBUG
+		// mode)
 		lineSpinnerHandlerFirstCall.set(true);
 	}
 
@@ -299,15 +333,15 @@ public class NextBusMain extends Activity {
 	 * Populates the stop spinner with the list of stops for a particular line,
 	 * using the Object variables for selected line and stop ID
 	 */
-	private void showAndSelectStopSpinner() {
+	private void showAndSelectStopSpinner(int selectedLine) {
 		try {
 			// we store the initial position, in order to go back after adapter
 			// reset
 			int stopIdBeforeReset = selectedStopID;
 			Resources resources = getResources();
 			AssetManager assetManager = resources.getAssets();
-			BusLine bl = BusLine.parseJson(busLines[selectedLineID],
-					assetManager.open(busLineAssets[selectedLineID]));
+			BusLine bl = BusLine.parseJson(busLines[selectedLine],
+					assetManager.open(busLineAssets[selectedLine]));
 			stopNameArray = bl.getNameArray();
 			stopCodeArray = bl.getCodeArray();
 

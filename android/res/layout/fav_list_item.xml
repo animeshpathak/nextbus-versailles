@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@android:color/background_light"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical" 
+    android:paddingTop="5pt"
+    android:paddingBottom="5pt">
+
+    <TextView
+        android:id="@+id/textFavLine"
+        android:paddingLeft="4pt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Line"
+        android:textColor="@android:color/black"
+        android:layout_weight="0"
+        android:paddingRight="4pt"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+  
+    <TextView
+        android:id="@+id/textFavStop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop"
+        android:textColor="@android:color/black"
+        android:layout_weight="3"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <ImageButton
+        android:id="@+id/favorites_remove_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/black"
+        android:src="@android:drawable/ic_menu_delete"
+        android:contentDescription="Delete"
+        android:background="@null"
+        android:layout_gravity="right|center_vertical"/>
+</LinearLayout>

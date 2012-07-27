@@ -184,19 +184,22 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 			NamedMatcher matcher = patt.matcher(input);
 			
 			// Fallback for the case where the result has one bus arrival only
-			if(!matcher.matches())
+			int nbOfArrivals = 2;
+			if(!matcher.matches()){
 				matcher = patt2.matcher(input);
+				nbOfArrivals = 1;
+			}
 			
 			if(matcher.matches()){
 				Map<String, String> groups = matcher.namedGroups();
 				if(groups.get(DIR[0]) != null){
-					BusArrivalInfo b1 = createBusArrivalInfo(groups, 
+					BusArrivalInfo b1 = createBusArrivalInfo(groups, nbOfArrivals, 
 							DIR[0], MIN[0], MIN[1], STATIC[0], STATIC[1], 
 							STAR[0], STAR[1], APP[0], APP[1], LAST[0], LAST[1]);
 					m.put(b1.direction, b1);
 				}
 				if(groups.get(DIR[1]) != null){
-					BusArrivalInfo b2 = createBusArrivalInfo(groups, 
+					BusArrivalInfo b2 = createBusArrivalInfo(groups, nbOfArrivals, 
 							DIR[1], MIN[2], MIN[3], STATIC[2], STATIC[3], 
 							STAR[2], STAR[3], APP[2], APP[3], LAST[2], LAST[3]);
 					m.put(b2.direction, b2);
@@ -215,6 +218,7 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 	 * Helper method to avoid code duplication
 	 * 
 	 * @param groups
+	 * @param onlyOneBusPerLine 
 	 * @param dir1
 	 * @param min1
 	 * @param min2
@@ -229,13 +233,12 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 	 * @return
 	 * @throws ParseException 
 	 */
-	private BusArrivalInfo createBusArrivalInfo(Map<String, String> groups, String dir1, 
+	private BusArrivalInfo createBusArrivalInfo(Map<String, String> groups, int arrivals, String dir1, 
 			String min1, String min2, 
 			String static1, String static2, 
 			String star1, String star2, String app1, String app2, String last1, String last2) throws ParseException {
 		BusArrivalInfo b1 = new BusArrivalInfo();
 		b1.direction = groups.get(dir1);
-		int arrivals = 2;
 		int[] b1Arrivals = new int[arrivals];
 		int[] b1Mentions = new int[arrivals];
 		if(groups.get(min1)!=null || groups.get(static1)!=null || groups.get(app1) != null){
@@ -250,18 +253,19 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 			if(groups.get(static1)!=null)
 				b1Arrivals[0] = frenchHourToArrivalMillis(groups.get(static1));
 		}
-		if(groups.get(min2)!=null || groups.get(static2)!=null || groups.get(app2) != null){
-			b1Mentions[1] |= (groups.get(star2) != null)?BusArrivalInfo.MENTION_THEORETICAL:0;
-			b1Mentions[1] |= (groups.get(last2) != null)?BusArrivalInfo.MENTION_LAST:0;
-			if((groups.get(app2) != null)){
-				b1Mentions[1] |= (groups.get(app2) != null)?BusArrivalInfo.MENTION_APPROACHING:0;
-				b1Arrivals[1] = 0;
+		if(arrivals > 1)
+			if(groups.get(min2)!=null || groups.get(static2)!=null || groups.get(app2) != null){
+				b1Mentions[1] |= (groups.get(star2) != null)?BusArrivalInfo.MENTION_THEORETICAL:0;
+				b1Mentions[1] |= (groups.get(last2) != null)?BusArrivalInfo.MENTION_LAST:0;
+				if((groups.get(app2) != null)){
+					b1Mentions[1] |= (groups.get(app2) != null)?BusArrivalInfo.MENTION_APPROACHING:0;
+					b1Arrivals[1] = 0;
+				}
+				if(groups.get(min2)!=null)
+					b1Arrivals[1] = Integer.parseInt(groups.get(min2)) * 60 * 1000;
+				if(groups.get(static2)!=null)
+					b1Arrivals[1] = frenchHourToArrivalMillis(groups.get(static2));
 			}
-			if(groups.get(min2)!=null)
-				b1Arrivals[1] = Integer.parseInt(groups.get(min2)) * 60 * 1000;
-			if(groups.get(static2)!=null)
-				b1Arrivals[1] = frenchHourToArrivalMillis(groups.get(static2));
-		}
 		b1.mention = b1Mentions;
 		b1.arrivalMillis = b1Arrivals;
 		return b1;
