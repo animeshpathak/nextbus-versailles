@@ -123,9 +123,9 @@ public class NextBusMain extends Activity {
 
 	/** Called when the activity is first started. */
 	@Override
-	public void onStart() {
-		super.onStart();
-		Log.d(LOG_TAG, "entering onStart()");
+	public void onCreate(Bundle bundle) {
+		super.onCreate(bundle);
+		Log.d(LOG_TAG, "entering onCreate()");
 
 		try {
 			Resources resources = getResources();
@@ -219,9 +219,7 @@ public class NextBusMain extends Activity {
 			}
 		});
 
-		lineSpinner = (Spinner) findViewById(R.id.stop_spinner);
 		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
-
 		stopSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
 
 			@Override
