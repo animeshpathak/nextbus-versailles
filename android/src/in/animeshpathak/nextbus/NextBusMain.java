@@ -21,6 +21,7 @@ import in.animeshpathak.nextbus.favorites.FavoriteDialog;
 import in.animeshpathak.nextbus.favorites.FavoriteDialog.OnFavoriteSelectedListener;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.PhebusArrivalQuery;
+import in.animeshpathak.nextbus.timetable.RatpArrivalQuery;
 
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -396,8 +397,13 @@ public class NextBusMain extends Activity {
 			String errorMessage = "";
 
 			try {
-				return new PhebusArrivalQuery(busLines[selectedLineID],
+				if(busLines[selectedLineID].startsWith("RATP")){
+					return new RatpArrivalQuery(busLines[selectedLineID],
 						stopCodeArray[selectedStopID]);
+				} else {
+					return new PhebusArrivalQuery(busLines[selectedLineID],
+							stopCodeArray[selectedStopID]);
+				}
 			} catch (Exception e) {
 				Log.e(LOG_TAG, e.getMessage(), e);
 				errorMessage = e.getMessage();

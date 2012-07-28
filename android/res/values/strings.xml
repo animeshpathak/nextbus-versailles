@@ -27,6 +27,7 @@
     <string name="bus_text_direction">Direction</string>
     <string name="bus_text_theoretical">Theoretical</string>
     <string name="bus_text_approaching">Bus approaching</string>
+    <string name="bus_text_unavailable">Info currently unavailable</string>
     <string name="bus_text_last">Last bus</string>
     <string name="last_updated_at">Last updated at</string>
     <string name="server_said">The server said</string>

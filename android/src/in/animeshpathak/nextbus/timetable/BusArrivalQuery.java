@@ -42,7 +42,7 @@ public abstract class BusArrivalQuery {
 				ssb.append("\t");
 				
 				// If bus is not approaching we print the time
-				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_APPROACHING) == 0){
+				if((entry.getValue().mention[i] & (BusArrivalInfo.MENTION_APPROACHING | BusArrivalInfo.MENTION_UNKNOWN)) == 0){
 					appendWithStyle(
 							ssb,
 							" " + formatTimeDelta(totalMillis),
@@ -51,6 +51,9 @@ public abstract class BusArrivalQuery {
 				String mention = "";
 				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_APPROACHING) != 0){
 					mention += " " + c.getString(R.string.bus_text_approaching);
+				}
+				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_UNKNOWN) != 0){
+					mention += " " + c.getString(R.string.bus_text_unavailable);
 				}
 				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_THEORETICAL) != 0){
 					mention += " " + c.getString(R.string.bus_text_theoretical);
@@ -89,6 +92,7 @@ public abstract class BusArrivalQuery {
 		public static final int MENTION_THEORETICAL = 1;
 		public static final int MENTION_APPROACHING = 2;
 		public static final int MENTION_LAST = 4;
+		public static final int MENTION_UNKNOWN = 8;
 		
 		public String direction;
 		public int arrivalMillis[];
