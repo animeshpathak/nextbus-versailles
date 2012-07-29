@@ -45,7 +45,7 @@ public abstract class BusArrivalQuery {
 				if((entry.getValue().mention[i] & (BusArrivalInfo.MENTION_APPROACHING | BusArrivalInfo.MENTION_UNKNOWN)) == 0){
 					appendWithStyle(
 							ssb,
-							" " + formatTimeDelta(totalMillis),
+							" " + formatTimeDelta(c, totalMillis),
 							new TextAppearanceSpan(c, R.style.BlueBusTextAppearance));
 				}
 				String mention = "";
@@ -71,9 +71,13 @@ public abstract class BusArrivalQuery {
 	}
 	
 	// Thanks to Android for having relative time Localized
-	public CharSequence formatTimeDelta(int totalMillis){
+	public CharSequence formatTimeDelta(Context c, int totalMillis){
 		long now = System.currentTimeMillis();
-		return DateUtils.getRelativeTimeSpanString(now + totalMillis, now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+		if(totalMillis < DateUtils.HOUR_IN_MILLIS){
+			return DateUtils.getRelativeTimeSpanString(now + totalMillis, now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+		} else {
+			return DateUtils.getRelativeTimeSpanString(c, now + totalMillis);
+		}
 	}
 
 	/**

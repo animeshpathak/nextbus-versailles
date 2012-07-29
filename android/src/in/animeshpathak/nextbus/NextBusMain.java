@@ -352,9 +352,12 @@ public class NextBusMain extends Activity {
 					.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
 			stopSpinner.setAdapter(stopAdapter);
-			stopSpinner.setSelection(
-					stopAdapter.getPosition(stopNameArray[stopIdBeforeReset]),
-					true);
+			
+			// we cannot move selection to provious position
+			if(stopIdBeforeReset < stopNameArray.length)
+				stopSpinner.setSelection(
+						stopAdapter.getPosition(stopNameArray[stopIdBeforeReset]),
+						true);
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
 		}
