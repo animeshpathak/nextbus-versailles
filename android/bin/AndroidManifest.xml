@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="in.animeshpathak.nextbus"
+    android:versionCode="12"
+    android:versionName="@string/version_name" >
+
+    <uses-sdk
+        android:minSdkVersion="4"
+        android:targetSdkVersion="16" />
+
+    <uses-permission android:name="android.permission.INTERNET" >
+    </uses-permission>
+
+    <application
+        android:icon="@drawable/bus_icon_newer"
+        android:label="@string/app_name" >
+        <activity
+            android:name="in.animeshpathak.nextbus.NextBusMain"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:screenOrientation="portrait" android:label="@string/home_activity_title" android:name="AboutActivity"></activity>
+    </application>
+
+</manifest>

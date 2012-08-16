@@ -101,23 +101,27 @@ public class NextBusMain extends Activity {
 
 	final Runnable showServerResponse = new Runnable() {
 		public void run() {
-			dismissDialog(DIALOG_GETTING_BUS_INFO);
-
-			Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
-			// Log.d(LOG_TAG, serverResponse);
-
-			busTimingsView.append("\n"
-					+ getString(R.string.last_updated_at)
-					+ ": "
-					+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
-							DateFormat.SHORT).format(new Date()) + "\n"
-					+ getString(R.string.server_said) + "...\n");
-			if (serverResponse != null && serverResponse.isValid())
-				busTimingsView.append(serverResponse
-						.getFormattedText(NextBusMain.this));
-			else if (serverResponse != null)
-				busTimingsView.append(serverResponse.getFallbackText());
-
+			try{
+				dismissDialog(DIALOG_GETTING_BUS_INFO);
+	
+				Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
+				// Log.d(LOG_TAG, serverResponse);
+	
+				busTimingsView.append("\n"
+						+ getString(R.string.last_updated_at)
+						+ ": "
+						+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
+								DateFormat.SHORT).format(new Date()) + "\n"
+						+ getString(R.string.server_said) + "...\n");
+				if (serverResponse != null && serverResponse.isValid())
+					busTimingsView.append(serverResponse
+							.getFormattedText(NextBusMain.this));
+				else if (serverResponse != null)
+					busTimingsView.append(serverResponse.getFallbackText());
+			} catch (IllegalArgumentException e){
+				// If we try to dismiss a a dialog that was not created.
+				Log.d(LOG_TAG, "We tried to dismiss a a dialog which was not created." + e.getMessage());
+			}
 		}
 	};
 
