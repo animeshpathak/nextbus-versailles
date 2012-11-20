@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:gravity="center|center_vertical"
+            android:layout_width="0pt"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/line_info" />
+
+        <Spinner
+            android:id="@+id/line_spinner"
+            android:layout_width="0pt"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:prompt="@string/line_spinner_prompt" >
+            <!-- Preview: listitem=@android:layout/simple_spinner_dropdown_item -->
+        </Spinner>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:gravity="center|center_vertical"
+            android:layout_width="0pt"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/stop_name" />
+
+        <Spinner
+            android:id="@+id/stop_spinner"
+            android:layout_width="0pt"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:prompt="@string/stop_spinner_prompt" >
+            <!-- Preview: listitem=@android:layout/simple_spinner_dropdown_item -->
+        </Spinner>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/update_button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/update" />
+
+    <TextView
+        android:id="@+id/bus_timings"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/bus_times" />
+    
+    
+	<RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <Button
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:id="@+id/feedback_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/feedbackbutton" />
+        
+        <Button
+        android:layout_alignParentBottom="true"
+        android:id="@+id/favorites_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/favoritebutton" />
+
+        <TextView
+            android:id="@+id/version_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:text="@string/version_name"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+    </RelativeLayout>
+</LinearLayout>

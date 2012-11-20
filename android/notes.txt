@@ -1,0 +1,4 @@
+Notes:
+
+- H and S are more used lines
+- Add a feedback button in the UI
