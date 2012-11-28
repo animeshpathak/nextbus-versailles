@@ -102,18 +102,6 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 	public PhebusArrivalQuery(String lineCode, String stopCode){
 		this.lineCode = lineCode;
 		this.stopCode = stopCode;
-		String serverResponse = getBusTimings();
-		CharSequence serverResponseInChars = Html.fromHtml(serverResponse, null, new TagHandler() {
-			@Override
-			public void handleTag(boolean opening, String tag, Editable output,
-					XMLReader xmlReader) {
-				if(tag.equals("td") && !opening)
-					output.append("\r\n");
-			}
-		});
-		fallbackResult = removeExcessBlankLines(serverResponseInChars);
-		this.queryResult = parseResult(fallbackResult);
-		this.valid = (queryResult != null);
 	}
 
 	@Override
@@ -291,5 +279,22 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 			foundTime.add(Calendar.DATE, 1);
 		}
 		return (int) (foundTime.getTimeInMillis() - System.currentTimeMillis());
+	}
+
+	@Override
+	public boolean postQuery() {
+		String serverResponse = getBusTimings();
+		CharSequence serverResponseInChars = Html.fromHtml(serverResponse, null, new TagHandler() {
+			@Override
+			public void handleTag(boolean opening, String tag, Editable output,
+					XMLReader xmlReader) {
+				if(tag.equals("td") && !opening)
+					output.append("\r\n");
+			}
+		});
+		fallbackResult = removeExcessBlankLines(serverResponseInChars);
+		this.queryResult = parseResult(fallbackResult);
+		this.valid = (queryResult != null);
+		return this.valid;
 	}
 }

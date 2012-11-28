@@ -32,4 +32,6 @@
     <string name="last_updated_at">Last updated at</string>
     <string name="server_said">The server said</string>
     <string name="getting_latest_times">Getting latest bus timings, please wait</string>
+    <string name="select_email_app">Select your preferred email application.</string>
+    <string name="email_hello">Hello,\n</string>
 </resources>

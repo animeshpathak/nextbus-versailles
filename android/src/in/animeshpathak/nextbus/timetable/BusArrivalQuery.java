@@ -14,6 +14,13 @@ import android.text.style.CharacterStyle;
 import android.text.style.TextAppearanceSpan;
 
 public abstract class BusArrivalQuery {
+	
+	/**
+	 * Executes the HTTP POSTs. This is the "heavy" method that should be called in a background thread.
+	 * @return
+	 */
+	public abstract boolean postQuery();
+	
 	/**
 	 * Verifies that this query result is valid
 	 * 
