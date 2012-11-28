@@ -54,12 +54,16 @@
         android:layout_height="wrap_content"
         android:text="@string/update" />
 
-    <TextView
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <TextView
         android:id="@+id/bus_timings"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:padding="5dp"
         android:text="@string/bus_times" />
-    
+    </ScrollView>  
     
 	<RelativeLayout
         android:layout_width="match_parent"
