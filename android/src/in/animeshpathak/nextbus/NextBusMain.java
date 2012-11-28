@@ -24,25 +24,16 @@ import in.animeshpathak.nextbus.timetable.PhebusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.RatpArrivalQuery;
 
 import java.io.InputStream;
-import java.text.DateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-
 import android.app.Activity;
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -54,19 +45,9 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 public class NextBusMain extends Activity {
-
-	protected static final int DIALOG_GETTING_BUS_INFO = 0;
-
 	private static String LOG_TAG = "NEXTBUS";
-
-	// The response from the server
-	private BusArrivalQuery serverResponse;
-
-	// The textview that holds the view
-	private TextView busTimingsView;
 
 	// To get new bus-lines use (e.g.): curl
 	// http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/AppelArret.php
@@ -92,38 +73,6 @@ public class NextBusMain extends Activity {
 	ArrayAdapter<CharSequence> lineAdapter;
 	Spinner stopSpinner;
 	ArrayAdapter<CharSequence> stopAdapter;
-
-	/**
-	 * The Handler that will run the runnable which will then update the bus
-	 * timings console
-	 */
-	final Handler uiHandler = new Handler();
-
-	final Runnable showServerResponse = new Runnable() {
-		public void run() {
-			try{
-				dismissDialog(DIALOG_GETTING_BUS_INFO);
-	
-				Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
-				// Log.d(LOG_TAG, serverResponse);
-	
-				busTimingsView.append("\n"
-						+ getString(R.string.last_updated_at)
-						+ ": "
-						+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
-								DateFormat.SHORT).format(new Date()) + "\n"
-						+ getString(R.string.server_said) + "...\n");
-				if (serverResponse != null && serverResponse.isValid())
-					busTimingsView.append(serverResponse
-							.getFormattedText(NextBusMain.this));
-				else if (serverResponse != null)
-					busTimingsView.append(serverResponse.getFallbackText());
-			} catch (IllegalArgumentException e){
-				// If we try to dismiss a a dialog that was not created.
-				Log.d(LOG_TAG, "We tried to dismiss a a dialog which was not created." + e.getMessage());
-			}
-		}
-	};
 
 	// This atomic boolean lets us solve the non-determinism in the exact time
 	// when the UI element (spinner) will get updated.
@@ -156,20 +105,13 @@ public class NextBusMain extends Activity {
 
 		setContentView(R.layout.main);
 
-		busTimingsView = (TextView) findViewById(R.id.bus_timings);
-
 		// get the button
 		// set handler to launch a processing dialog
 		Button updateButton = (Button) findViewById(R.id.update_button);
 		updateButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				busTimingsView.setText("");
-				// start the new thread
-				new BusInfoGetter().start();
-				// show the progress dialog
-				showDialog(DIALOG_GETTING_BUS_INFO);
-
+				getBusTimings();
 			}
 		});
 
@@ -179,15 +121,13 @@ public class NextBusMain extends Activity {
 			public void onClick(View v) {
 				Intent i = new Intent(Intent.ACTION_SEND);
 				i.setType("message/rfc822"); // use from live device
-				// TODO pull these strings into a constants file
 				i.putExtra(Intent.EXTRA_EMAIL,
-						new String[] { "animesh@gmail.com" });
+						new String[] { Constants.FEEDBACK_EMAIL_ADDRESS });
 				i.putExtra(Intent.EXTRA_SUBJECT,
-						"[nextbus-versailles] Feedback");
-				// TODO localize these strings
-				i.putExtra(Intent.EXTRA_TEXT, "Bonjour,\n");
+						Constants.FEEDBACK_EMAIL_SUBJECT);
+				i.putExtra(Intent.EXTRA_TEXT, getString(R.string.email_hello));
 				startActivity(Intent.createChooser(i,
-						"Select your preferred email application."));
+						getString(R.string.select_email_app)));
 			}
 		});
 
@@ -256,8 +196,7 @@ public class NextBusMain extends Activity {
 		favoriteButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View arg0) {
-				final Button updateButton = (Button) findViewById(R.id.update_button);
-				FavoriteDialog fd = new FavoriteDialog(NextBusMain.this,
+				new FavoriteDialog(NextBusMain.this,
 						new OnFavoriteSelectedListener() {
 							@Override
 							public void favoriteSelected(Favorite fav) {
@@ -267,11 +206,7 @@ public class NextBusMain extends Activity {
 								selectedStopID = stopAdapter.getPosition(fav
 										.getStop());
 
-								busTimingsView.setText("");
-								// start the new thread
-								new BusInfoGetter().start();
-								// show the progress dialog
-								showDialog(DIALOG_GETTING_BUS_INFO);
+								getBusTimings();
 
 								lineSpinnerHandlerFirstCall.set(true);
 								// sync or async we call it here
@@ -309,8 +244,6 @@ public class NextBusMain extends Activity {
 	@Override
 	protected void onPause() {
 		Log.d(LOG_TAG, "entering onPause()");
-		super.onPause();
-
 		// at this time, store the local variables pointing to the indices
 		// of the line and stop, then return
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
@@ -323,6 +256,7 @@ public class NextBusMain extends Activity {
 		// gets called before finishing onResume() (does not happen in DEBUG
 		// mode)
 		lineSpinnerHandlerFirstCall.set(true);
+		super.onPause();
 	}
 
 	private void showAndSelectLineSpinner() {
@@ -356,80 +290,33 @@ public class NextBusMain extends Activity {
 					.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
 			stopSpinner.setAdapter(stopAdapter);
-			
+
 			// we cannot move selection to provious position
-			if(stopIdBeforeReset < stopNameArray.length)
-				stopSpinner.setSelection(
-						stopAdapter.getPosition(stopNameArray[stopIdBeforeReset]),
-						true);
+			if (stopIdBeforeReset < stopNameArray.length)
+				stopSpinner.setSelection(stopAdapter
+						.getPosition(stopNameArray[stopIdBeforeReset]), true);
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
 		}
 	}
 
-	@Override
-	protected Dialog onCreateDialog(int id, Bundle args) {
-		switch (id) {
-		case DIALOG_GETTING_BUS_INFO:
-			ProgressDialog d = new ProgressDialog(NextBusMain.this);
-			d.setMessage(getString(R.string.getting_latest_times) + "...");
-			return d;
-		default:
-			return null;
-		}
-	}
+	private void getBusTimings() {
+		try {
+			BusArrivalQuery query;
 
-	@Override
-	protected Dialog onCreateDialog(int id) {
-		switch (id) {
-		case DIALOG_GETTING_BUS_INFO:
-			ProgressDialog d = new ProgressDialog(NextBusMain.this);
-			d.setMessage(getString(R.string.getting_latest_times) + "...");
-			return d;
-		default:
-			return null;
-		}
-	}
-
-	// TODO use AsyncTask
-	class BusInfoGetter extends Thread {
-
-		// This executes a POST and gets the actual info from the website
-		// Thanks to http://www.androidsnippets.org/snippets/36/
-		private BusArrivalQuery getBusTimings() {
-			// Create a new HttpClient and Post Header
-			HttpClient httpclient = new DefaultHttpClient();
-			HttpPost httppost = new HttpPost(
-					"http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/code_temps_reel.php");
-			String errorMessage = "";
-
-			try {
-				if(busLines[selectedLineID].startsWith("RATP")){
-					return new RatpArrivalQuery(busLines[selectedLineID],
+			if (busLines[selectedLineID].startsWith("RATP")) {
+				query = new RatpArrivalQuery(busLines[selectedLineID],
 						stopCodeArray[selectedStopID]);
-				} else {
-					return new PhebusArrivalQuery(busLines[selectedLineID],
-							stopCodeArray[selectedStopID]);
-				}
-			} catch (Exception e) {
-				Log.e(LOG_TAG, e.getMessage(), e);
-				errorMessage = e.getMessage();
+			} else {
+				query = new PhebusArrivalQuery(busLines[selectedLineID],
+						stopCodeArray[selectedStopID]);
 			}
-			return null;
+
+			// launch task
+			new BusInfoGetterTask(this).execute(query);
+		} catch (Exception e) {
+			Log.e(LOG_TAG, e.getMessage(), e);
 		}
-
-		@Override
-		public void run() {
-			// upload File and get server response
-			serverResponse = getBusTimings();
-			// dismiss the dialog
-			Log.d(LOG_TAG, "Done doing my stuff. " + "\nGot response: "
-					+ serverResponse
-					+ "Sending message for dismissing dialog now.");
-
-			uiHandler.post(showServerResponse);
-		}
-
 	}
 
 	@Override

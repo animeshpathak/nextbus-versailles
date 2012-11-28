@@ -41,13 +41,6 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 		this.lineCode = lineCode.substring(5);
 		this.stopCode = stopCode;
 		fallbackResult = "";
-		
-		Map<String, BusArrivalInfo> map = new HashMap<String, BusArrivalQuery.BusArrivalInfo>();
-		parseResult(map, getBusTimings("A"));
-		parseResult(map, getBusTimings("R"));
-		
-		this.queryResult = map;
-		this.valid = (map != null && map.size() > 0);
 	}
 
 	private void parseResult(Map<String, BusArrivalInfo> map, String string) {
@@ -172,5 +165,16 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 
 		return "An error (\"" + errorMessage
 				+ "\") happenned in the query. Please see logs.";
+	}
+
+	@Override
+	public boolean postQuery() {
+		Map<String, BusArrivalInfo> map = new HashMap<String, BusArrivalQuery.BusArrivalInfo>();
+		parseResult(map, getBusTimings("A"));
+		parseResult(map, getBusTimings("R"));
+		
+		this.queryResult = map;
+		this.valid = (map != null && map.size() > 0);
+		return this.valid;
 	}
 }
