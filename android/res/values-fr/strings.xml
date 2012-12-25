@@ -9,15 +9,16 @@
 	<string name="stop_name">Arrêt:</string>
 	<string name="stop_spinner_prompt">Choisir un arrêt</string>
     <string name="line_spinner_prompt">Choisir un ligne</string>
-	<string name="bus_times">Pas d\'infos. Appuyer sur le bouton ci-dessus.</string>
+	<string name="bus_times"></string>
 	<string name="bus_text_direction">En direction de</string>
 	<string name="bus_text_theoretical">Théorique</string>
     <string name="bus_text_approaching">En approche</string>
     <string name="bus_text_unavailable">Info indisponible</string>
     <string name="bus_text_last">Dernier bus</string>
     <string name="server_said">Le serveur a répondu</string>
-    <string name="last_updated_at">Dernière mise à jour à</string>
+    <string name="last_updated_at">Dernière mise à jour</string>
     <string name="getting_latest_times">Récuperation des horaires a jour, veuillez patienter</string>
     <string name="select_email_app">Sélectionnez votre application de messagerie préférée.</string>
     <string name="email_hello">Bonjour,\n</string>
+    <string name="wildcard_bus_line">Toutes les lignes</string>
 </resources>

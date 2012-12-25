@@ -7,20 +7,31 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.format.DateUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.TextAppearanceSpan;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.TextView;
 
 public abstract class BusArrivalQuery {
-	
+
+	private View contentView = null;
+
+	protected String lineCode;
+	protected String stopCode;
+
 	/**
-	 * Executes the HTTP POSTs. This is the "heavy" method that should be called in a background thread.
+	 * Executes the HTTP POSTs. This is the "heavy" method that should be called
+	 * in a background thread.
+	 * 
 	 * @return
 	 */
 	public abstract boolean postQuery();
-	
+
 	/**
 	 * Verifies that this query result is valid
 	 * 
@@ -41,47 +52,77 @@ public abstract class BusArrivalQuery {
 		Set<Entry<String, BusArrivalInfo>> arrivalSet = getNextArrivals()
 				.entrySet();
 		for (Entry<String, BusArrivalInfo> entry : arrivalSet) {
-			appendWithStyle(ssb, c.getString(R.string.bus_text_direction) + " " + entry.getKey() + "\n",
-					new TextAppearanceSpan(c, R.style.DefaultBusTextAppearance));
+			appendWithStyle(ssb, c.getString(R.string.bus_text_direction) + " "
+					+ entry.getKey() + "\n", new TextAppearanceSpan(c,
+					R.style.DefaultBusTextAppearance));
 			for (int i = 0; i < entry.getValue().arrivalMillis.length; i++) {
 				int totalMillis = entry.getValue().arrivalMillis[i];
-				
+
 				ssb.append("\t");
-				
+
 				// If bus is not approaching we print the time
-				if((entry.getValue().mention[i] & (BusArrivalInfo.MENTION_APPROACHING | BusArrivalInfo.MENTION_UNKNOWN)) == 0){
-					appendWithStyle(
-							ssb,
-							" " + formatTimeDelta(c, totalMillis),
-							new TextAppearanceSpan(c, R.style.BlueBusTextAppearance));
+				if ((entry.getValue().mention[i] & (BusArrivalInfo.MENTION_APPROACHING | BusArrivalInfo.MENTION_UNKNOWN)) == 0) {
+					appendWithStyle(ssb, " " + formatTimeDelta(c, totalMillis),
+							new TextAppearanceSpan(c,
+									R.style.BlueBusTextAppearance));
 				}
 				String mention = "";
-				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_APPROACHING) != 0){
+				if ((entry.getValue().mention[i] & BusArrivalInfo.MENTION_APPROACHING) != 0) {
 					mention += " " + c.getString(R.string.bus_text_approaching);
 				}
-				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_UNKNOWN) != 0){
+				if ((entry.getValue().mention[i] & BusArrivalInfo.MENTION_UNKNOWN) != 0) {
 					mention += " " + c.getString(R.string.bus_text_unavailable);
 				}
-				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_THEORETICAL) != 0){
+				if ((entry.getValue().mention[i] & BusArrivalInfo.MENTION_THEORETICAL) != 0) {
 					mention += " " + c.getString(R.string.bus_text_theoretical);
 				}
-				if((entry.getValue().mention[i] & BusArrivalInfo.MENTION_LAST) != 0){
+				if ((entry.getValue().mention[i] & BusArrivalInfo.MENTION_LAST) != 0) {
 					mention += " " + c.getString(R.string.bus_text_last);
 				}
-				appendWithStyle(ssb, mention + "\n",
-						new TextAppearanceSpan(c, R.style.RedBusTextAppearance));
+				appendWithStyle(ssb, mention + "\n", new TextAppearanceSpan(c,
+						R.style.RedBusTextAppearance));
 			}
 			appendWithStyle(ssb, "\n", new TextAppearanceSpan(c,
 					R.style.DefaultBusTextAppearance));
 		}
+		// removing last new-line
+		if (ssb.length() > 0)
+			ssb.delete(ssb.length() - 1, ssb.length());
 		return ssb;
 	}
-	
+
+	public View getInflatedView(Context context) {
+		if (contentView == null)
+			contentView = getInitialView(context);
+
+		TextView txtContent = (TextView) contentView
+				.findViewById(R.id.textArrBoxContent);
+		if (isValid()) {
+			txtContent.setText(getFormattedText(context));
+		} else {
+			txtContent.setText(getFallbackText());
+			contentView.setBackgroundColor(0xFF6E1800);
+		}
+		return contentView;
+	}
+
+	public View getInitialView(Context context) {
+		LayoutInflater inflater = (LayoutInflater) context
+				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		contentView = inflater.inflate(R.layout.bus_arrival_box, null);
+		TextView txtLine = (TextView) contentView
+				.findViewById(R.id.textArrBoxLine);
+		txtLine.setText(lineCode);
+		return contentView;
+	}
+
 	// Thanks to Android for having relative time Localized
-	public CharSequence formatTimeDelta(Context c, int totalMillis){
+	public CharSequence formatTimeDelta(Context c, int totalMillis) {
 		long now = System.currentTimeMillis();
-		if(totalMillis < DateUtils.HOUR_IN_MILLIS){
-			return DateUtils.getRelativeTimeSpanString(now + totalMillis, now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+		if (totalMillis < DateUtils.HOUR_IN_MILLIS) {
+			return DateUtils.getRelativeTimeSpanString(now + totalMillis, now,
+					DateUtils.MINUTE_IN_MILLIS,
+					DateUtils.FORMAT_ABBREV_RELATIVE);
 		} else {
 			return DateUtils.getRelativeTimeSpanString(c, now + totalMillis);
 		}
@@ -104,7 +145,7 @@ public abstract class BusArrivalQuery {
 		public static final int MENTION_APPROACHING = 2;
 		public static final int MENTION_LAST = 4;
 		public static final int MENTION_UNKNOWN = 8;
-		
+
 		public String direction;
 		public int arrivalMillis[];
 		public int mention[];
