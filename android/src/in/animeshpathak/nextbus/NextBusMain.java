@@ -22,17 +22,22 @@ import in.animeshpathak.nextbus.favorites.FavoriteDialog.OnFavoriteSelectedListe
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.PhebusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.RatpArrivalQuery;
+import in.animeshpathak.nextbus.timetable.data.BusLine;
+import in.animeshpathak.nextbus.timetable.data.BusNetwork;
+import in.animeshpathak.nextbus.timetable.data.BusStop;
 
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.json.JSONException;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -44,6 +49,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 
 public class NextBusMain extends Activity {
@@ -52,58 +58,32 @@ public class NextBusMain extends Activity {
 	// To get new bus-lines use (e.g.): curl
 	// http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/AppelArret.php
 	// --data "ligne=00JLB" > 0JLB.json
-	// Holds the labels of the known bus lines
-	private String[] busLines = {};
 
-	// Holds the file-names of the bus-line data
-	private String[] busLineAssets = {};
-
-	private String[] stopNameArray = {};
-
-	private String[] stopCodeArray = {};
-
-	/** The currently selected line */
-	private int selectedLineID;
-
-	// ID into above arrays to find the stop
-	private int selectedStopID;
+	private BusNetwork busNet;
 
 	// UI elements
 	Spinner lineSpinner;
-	ArrayAdapter<CharSequence> lineAdapter;
+	ArrayAdapter<BusLine> lineAdapter;
 	Spinner stopSpinner;
-	ArrayAdapter<CharSequence> stopAdapter;
+	ArrayAdapter<BusStop> stopAdapter;
 
-	// This atomic boolean lets us solve the non-determinism in the exact time
-	// when the UI element (spinner) will get updated.
-	private AtomicBoolean lineSpinnerHandlerFirstCall = new AtomicBoolean(false);
+	// Executor used for parallel AsyncTasks
+	ThreadPoolExecutor taskExecutor = new ThreadPoolExecutor(10, 20, 10,
+			TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(20));
 
 	/** Called when the activity is first started. */
 	@Override
 	public void onCreate(Bundle bundle) {
 		super.onCreate(bundle);
 		Log.d(LOG_TAG, "entering onCreate()");
+		setContentView(R.layout.main);
 
 		try {
-			Resources resources = getResources();
-			AssetManager assetManager = resources.getAssets();
-			InputStream inputStream;
-			inputStream = assetManager.open("buslines.properties");
-			Properties properties = new Properties();
-			properties.load(inputStream);
-
-			int setSize = properties.size();
-			busLines = properties.keySet().toArray(new String[setSize]);
-			Arrays.sort(busLines, String.CASE_INSENSITIVE_ORDER);
-			busLineAssets = new String[setSize];
-			for (int i = 0; i < setSize; i++) {
-				busLineAssets[i] = (String) properties.get(busLines[i]);
-			}
+			busNet = new BusNetwork(this);
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
+			return;
 		}
-
-		setContentView(R.layout.main);
 
 		// get the button
 		// set handler to launch a processing dialog
@@ -111,7 +91,11 @@ public class NextBusMain extends Activity {
 		updateButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				getBusTimings();
+				BusLine selectedLine = lineAdapter.getItem(lineSpinner
+						.getSelectedItemPosition());
+				BusStop selectedStop = stopAdapter.getItem(stopSpinner
+						.getSelectedItemPosition());
+				getBusTimings(selectedLine, selectedStop);
 			}
 		});
 
@@ -132,86 +116,36 @@ public class NextBusMain extends Activity {
 		});
 
 		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
-		lineAdapter = new ArrayAdapter<CharSequence>(this,
-				android.R.layout.simple_spinner_item, busLines);
-
+		lineAdapter = new ArrayAdapter<BusLine>(this,
+				android.R.layout.simple_spinner_item, busNet.getLines());
 		lineAdapter
 				.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		lineSpinner.setAdapter(lineAdapter);
-		lineSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(AdapterView<?> view, View arg1, int pos,
-					long id) {
-				Log.d(LOG_TAG, "lineSpinnerItemSelected!");
-				Log.d(LOG_TAG, "Line Position = " + pos);
-				Log.d(LOG_TAG, "Line ID = " + id);
-				// set the line ID
-				selectedLineID = (int) id;
-				// reset the stop ID
-				if (!lineSpinnerHandlerFirstCall.getAndSet(false)) {
-					selectedStopID = 0;
-				}
-
-				Log.d(LOG_TAG,
-						"I hope that the selected item "
-								+ view.getItemAtPosition(pos)
-								+ " is the same as " + busLines[selectedLineID]);
-
-				showAndSelectStopSpinner(selectedLineID);
-
-			}
-
-			@Override
-			public void onNothingSelected(AdapterView<?> arg0) {
-				// do nothing
-			}
-		});
 
 		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
-		stopSpinner.setOnItemSelectedListener(new OnItemSelectedListener() {
-
-			@Override
-			public void onItemSelected(AdapterView<?> view, View arg1, int pos,
-					long id) {
-				Log.d(LOG_TAG, "stopSpinnerItemSelected!");
-				Log.d(LOG_TAG, "Stop Position = " + pos);
-				Log.d(LOG_TAG, "Stop ID = " + id);
-				selectedStopID = (int) id;
-
-				Log.d(LOG_TAG,
-						"I hope that the selected item "
-								+ view.getItemAtPosition(pos)
-								+ " is the same as "
-								+ stopNameArray[selectedStopID]);
-			}
-
-			@Override
-			public void onNothingSelected(AdapterView<?> arg0) {
-				// do nothing
-			}
-
-		});
+		stopAdapter = new ArrayAdapter<BusStop>(this,
+				android.R.layout.simple_spinner_item);
+		stopAdapter
+				.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		stopSpinner.setAdapter(stopAdapter);
 
 		Button favoriteButton = (Button) findViewById(R.id.favorites_button);
 		favoriteButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View arg0) {
-				new FavoriteDialog(NextBusMain.this,
+				new FavoriteDialog(
+						NextBusMain.this,
 						new OnFavoriteSelectedListener() {
 							@Override
 							public void favoriteSelected(Favorite fav) {
-								selectedLineID = lineAdapter.getPosition(fav
-										.getLine());
-								showAndSelectStopSpinner(selectedLineID);
-								selectedStopID = stopAdapter.getPosition(fav
-										.getStop());
-
-								getBusTimings();
-
-								lineSpinnerHandlerFirstCall.set(true);
-								// sync or async we call it here
-								showAndSelectLineSpinner();
-								stopSpinner.setSelection(selectedStopID);
+								BusLine bl = busNet.getLineByName(fav.getLine());
+								BusStop bs = busNet.getStopByName(fav.getStop());
+								if (bl == null || bs == null) {
+									Log.e(LOG_TAG, "Favorite not found!");
+									return;
+								}
+								updateSpinners(bl, bs);
+								getBusTimings(bl, bs);
 							}
 						}, lineSpinner.getSelectedItem().toString(),
 						stopSpinner.getSelectedItem().toString());
@@ -219,11 +153,57 @@ public class NextBusMain extends Activity {
 		});
 	}
 
+	OnItemSelectedListener lineSpinnerListener = new OnItemSelectedListener() {
+		@Override
+		public void onItemSelected(AdapterView<?> view, View arg1, int pos,
+				long id) {
+			Log.d(LOG_TAG, "lineSpinnerItemSelected!");
+			Log.d(LOG_TAG, "Line Position = " + pos);
+			Log.d(LOG_TAG, "Line ID = " + id);
+
+			BusStop oldSelection = stopAdapter.getItem(stopSpinner
+					.getSelectedItemPosition());
+			stopAdapter.clear();
+			List<BusStop> stops = lineAdapter.getItem(pos).getStops();
+			for (BusStop busStop : stops) {
+				// addAll method is unavailable in old APIs
+				stopAdapter.add(busStop);
+			}
+			stopAdapter.notifyDataSetChanged();
+
+			// The stop exists in the new selection
+			if (stops.contains(oldSelection)) {
+				stopSpinner.setSelection(stopAdapter.getPosition(oldSelection));
+			} else {
+				stopSpinner.setSelection(0);
+			}
+		}
+
+		@Override
+		public void onNothingSelected(AdapterView<?> arg0) {
+			// do nothing
+		}
+	};
+
+	private void updateSpinners(BusLine line, BusStop stop) {
+		// disable the selection listener
+		lineSpinner.setOnItemSelectedListener(null);
+		lineSpinner.setSelection(lineAdapter.getPosition(line), false);
+		stopAdapter.clear();
+		List<BusStop> stops = line.getStops();
+		for (BusStop busStop : stops) {
+			// addAll method is unavailable in old APIs
+			stopAdapter.add(busStop);
+		}
+		stopAdapter.notifyDataSetChanged();
+		stopSpinner.setSelection(stopAdapter.getPosition(stop), false);
+		lineSpinner.setOnItemSelectedListener(lineSpinnerListener);
+	}
+
 	@Override
 	protected void onResume() {
 		super.onResume();
 		Log.d(LOG_TAG, "entering onResume()");
-
 		// at this time, the UI elements have been created. Need to read
 		// It is best not to reuse references to views after pause (Android
 		// seems to create new objects)
@@ -231,14 +211,12 @@ public class NextBusMain extends Activity {
 		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
 		// the shared preferences, and store them in local variables.
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-		selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
-		// ! The adapter was not created on JellyBean, because of async call =>
-		// ArrayOutOfBoundsException
-		selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
-		lineSpinnerHandlerFirstCall.set(true);
+		int selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
+		int selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
 
-		// sync or async we call it here
-		showAndSelectLineSpinner();
+		BusLine bl = busNet.getLines().get(selectedLineID);
+		BusStop bs = bl.getStops().get(selectedStopID);
+		updateSpinners(bl, bs);
 	}
 
 	@Override
@@ -248,74 +226,75 @@ public class NextBusMain extends Activity {
 		// of the line and stop, then return
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 		SharedPreferences.Editor editor = prefs.edit();
-		editor.putInt(Constants.SELECTED_LINE, selectedLineID);
-		editor.putInt(Constants.SELECTED_STOP, selectedStopID);
-		editor.commit();
 
-		// On screen lock/unlock, the line spinner onItemSelected callback
-		// gets called before finishing onResume() (does not happen in DEBUG
-		// mode)
-		lineSpinnerHandlerFirstCall.set(true);
+		BusLine bl = lineAdapter.getItem(lineSpinner.getSelectedItemPosition());
+		BusStop bs = stopAdapter.getItem(stopSpinner.getSelectedItemPosition());
+
+		editor.putInt(Constants.SELECTED_LINE, busNet.getLines().indexOf(bl));
+		editor.putInt(Constants.SELECTED_STOP, bl.getStops().indexOf(bs));
+		editor.commit();
 		super.onPause();
 	}
 
-	private void showAndSelectLineSpinner() {
-		// now check if the stopName is not null. If so, set it properly.
-		// apparently this does not work if animation parameter not set
-		// I think animation makes the change happen after the view is displayed
-		// (and not before). So it is an order problem
-		lineSpinner.setSelection(
-				lineAdapter.getPosition(busLines[selectedLineID]), true);
-	}
-
-	/**
-	 * Populates the stop spinner with the list of stops for a particular line,
-	 * using the Object variables for selected line and stop ID
-	 */
-	private void showAndSelectStopSpinner(int selectedLine) {
+	private void getBusTimings(BusLine selectedLine, BusStop selectedStop) {
 		try {
-			// we store the initial position, in order to go back after adapter
-			// reset
-			int stopIdBeforeReset = selectedStopID;
-			Resources resources = getResources();
-			AssetManager assetManager = resources.getAssets();
-			BusLine bl = BusLine.parseJson(busLines[selectedLine],
-					assetManager.open(busLineAssets[selectedLine]));
-			stopNameArray = bl.getNameArray();
-			stopCodeArray = bl.getCodeArray();
+			// Clearing old data
+			// TextView busTimingsView = (TextView) this
+			// .findViewById(R.id.bus_timings);
+			// busTimingsView.setText(this.getString(R.string.bus_times));
+			LinearLayout busTimingsViewContainer = (LinearLayout) this
+					.findViewById(R.id.bus_section);
+			busTimingsViewContainer.removeAllViews();
+			BusArrivalQuery query = null;
 
-			stopAdapter = new ArrayAdapter<CharSequence>(NextBusMain.this,
-					android.R.layout.simple_spinner_item, stopNameArray);
-			stopAdapter
-					.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+			if (selectedLine.getName().startsWith("*")) {
+				getMultipleBusTimings(selectedStop);
+				return;
+			} else if (selectedLine.getName().startsWith("RATP")) {
+				query = new RatpArrivalQuery(selectedLine.getCode(),
+						selectedStop.getCode());
+			} else {
+				query = new PhebusArrivalQuery(selectedLine.getCode(),
+						selectedStop.getCode());
+			}
 
-			stopSpinner.setAdapter(stopAdapter);
-
-			// we cannot move selection to provious position
-			if (stopIdBeforeReset < stopNameArray.length)
-				stopSpinner.setSelection(stopAdapter
-						.getPosition(stopNameArray[stopIdBeforeReset]), true);
+			// launch task
+			new BusInfoGetterTask(this, false, query).execute();
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
 		}
 	}
 
-	private void getBusTimings() {
-		try {
-			BusArrivalQuery query;
+	/**
+	 * Makes multiple queries for obtaining all buses arriving at the selected
+	 * station
+	 * 
+	 * @param selectedStop
+	 *            The chosen stopId.
+	 * @throws JSONException
+	 * @throws IOException
+	 */
+	private void getMultipleBusTimings(BusStop selectedStop)
+			throws IOException, JSONException {
+		// Get all lines which have this stop in their path
+		// Highly inefficient, but Ok for testing
+		List<BusLine> linesToSearch = new ArrayList<BusLine>();
+		List<BusLine> allLines = busNet.getLines();
+		for (BusLine cLine : allLines) {
+			if (cLine.getName().startsWith("*"))
+				continue;
 
-			if (busLines[selectedLineID].startsWith("RATP")) {
-				query = new RatpArrivalQuery(busLines[selectedLineID],
-						stopCodeArray[selectedStopID]);
-			} else {
-				query = new PhebusArrivalQuery(busLines[selectedLineID],
-						stopCodeArray[selectedStopID]);
+			if (cLine.getStops().contains(selectedStop)) {
+				linesToSearch.add(cLine);
 			}
+		}
 
+		for (BusLine qLine : linesToSearch) {
+			BusArrivalQuery query = new PhebusArrivalQuery(qLine.getCode(),
+					selectedStop.getCode());
 			// launch task
-			new BusInfoGetterTask(this).execute(query);
-		} catch (Exception e) {
-			Log.e(LOG_TAG, e.getMessage(), e);
+			new BusInfoGetterTask(this, false, query)
+					.executeOnExecutor(this.taskExecutor);
 		}
 	}
 

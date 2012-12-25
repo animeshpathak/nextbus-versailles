@@ -11,81 +11,90 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class BusInfoGetterTask extends
-		AsyncTask<BusArrivalQuery, Void, BusArrivalQuery> {
+public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 
-	private final ProgressDialog progressDialog;
+	private ProgressDialog progressDialog = null;
 	private final Activity mainActivity;
+	private boolean showWaitDialog = true;
+	private BusArrivalQuery query;
 	private static final String LOG_TAG = "NEXTBUS";
 
-	public BusInfoGetterTask(Activity main) {
+	public BusInfoGetterTask(Activity main, BusArrivalQuery query) {
+		this(main, true, query);
+	}
+
+	public BusInfoGetterTask(Activity main, boolean showWaitDialog,
+			BusArrivalQuery query) {
 		this.mainActivity = main;
-		this.progressDialog = new ProgressDialog(main);
-		this.progressDialog.setMessage(main
-				.getString(R.string.getting_latest_times) + "...");
-		this.progressDialog.setCancelable(true);
-		this.progressDialog.setOnCancelListener(new OnCancelListener() {
-			@Override
-			public void onCancel(DialogInterface dialog) {
-				cancel(true);
-			}
-		});
+		this.showWaitDialog = showWaitDialog;
+		this.query = query;
+
+		if (this.showWaitDialog) {
+			this.progressDialog = new ProgressDialog(main);
+			this.progressDialog.setMessage(main
+					.getString(R.string.getting_latest_times) + "...");
+			this.progressDialog.setCancelable(true);
+			this.progressDialog.setOnCancelListener(new OnCancelListener() {
+				@Override
+				public void onCancel(DialogInterface dialog) {
+					cancel(true);
+				}
+			});
+		}
 	}
 
 	@Override
 	protected void onPreExecute() {
-		progressDialog.show();
-		TextView busTimingsView = (TextView) mainActivity
-				.findViewById(R.id.bus_timings);
-		busTimingsView.setText(mainActivity.getString(R.string.bus_times));
+		if (showWaitDialog)
+			progressDialog.show();
+
+		LinearLayout busTimingsScroll = (LinearLayout) mainActivity
+				.findViewById(R.id.bus_section);
+		busTimingsScroll.addView(query.getInitialView(mainActivity));
 	}
 
 	@Override
 	protected void onCancelled() {
-		progressDialog.dismiss();
+		if (showWaitDialog)
+			progressDialog.dismiss();
 	}
 
 	@Override
-	protected BusArrivalQuery doInBackground(BusArrivalQuery... params) {
-		if (params.length < 1 || params[0] == null)
-			return null;
-
-		Log.d(LOG_TAG, "Done doing my stuff. " + "\nGot response: " + params[0]
+	protected Void doInBackground(Void... params) {
+		query.postQuery();
+		Log.d(LOG_TAG, "Done doing my stuff. " + "\nGot response: "
 				+ "Sending message for dismissing dialog now.");
-
-		if (params[0] != null && params[0].postQuery()) {
-			return params[0];
-		}
-
 		return null;
 	}
 
 	@Override
-	protected void onPostExecute(BusArrivalQuery serverResponse) {
-		super.onPostExecute(serverResponse);
-		
-		if(serverResponse == null)
-			return;
-		
+	protected void onPostExecute(Void param) {
+		super.onPostExecute(param);
+
 		try {
-			progressDialog.dismiss();
+			if (showWaitDialog)
+				progressDialog.dismiss();
 
 			Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
 
-			TextView busTimingsView = (TextView) mainActivity
-					.findViewById(R.id.bus_timings);
-			busTimingsView.setText("\n"
-					+ mainActivity.getString(R.string.last_updated_at)
-					+ ": "
-					+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
-							DateFormat.SHORT).format(new Date()) + "\n"
-					+ mainActivity.getString(R.string.server_said) + "...\n");
-			if (serverResponse != null && serverResponse.isValid())
-				busTimingsView.append(serverResponse.getFormattedText(mainActivity));
-			else if (serverResponse != null)
-				busTimingsView.append(serverResponse.getFallbackText());
+			if (query != null) {
+				View itemView = query.getInflatedView(mainActivity);
+				// make progress bar invisible
+				itemView.findViewById(R.id.progressArrBox).setVisibility(
+						View.INVISIBLE);
+
+				TextView busTimingsView = (TextView) itemView
+						.findViewById(R.id.bus_timings_item);
+				busTimingsView.setText("\n"
+						+ mainActivity.getString(R.string.last_updated_at)
+						+ ": "
+						+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
+								DateFormat.SHORT).format(new Date()));
+			}
 		} catch (IllegalArgumentException e) {
 			// If we try to dismiss a a dialog that was not created.
 			Log.d(LOG_TAG,

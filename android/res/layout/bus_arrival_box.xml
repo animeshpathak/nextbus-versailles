@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:id="@+id/arr_box_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/textArrBoxLine"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_gravity="center_horizontal"
+            android:background="#2B5D8F"
+            android:gravity="center_horizontal"
+            android:maxWidth="50dp"
+            android:minWidth="50dp"
+            android:padding="4dp"
+            android:text="#"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="40dp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textArrBoxContent"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:padding="6dp"
+            android:text="" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progressArrBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true" />
+
+    <TextView
+        android:id="@+id/bus_timings_item"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/arr_box_layout"
+        android:gravity="right"
+        android:padding="5dp"
+        android:text="@string/bus_times" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/arr_box_layout"
+        android:background="#999" >
+    </LinearLayout>
+
+</RelativeLayout>
