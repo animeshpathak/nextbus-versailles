@@ -59,6 +59,7 @@ public class NextBusMain extends Activity {
 	// http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/AppelArret.php
 	// --data "ligne=00JLB" > 0JLB.json
 
+	// Contains all data regarding bus lines and stops
 	private BusNetwork busNet;
 
 	// UI elements
