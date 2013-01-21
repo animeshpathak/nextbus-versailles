@@ -2,14 +2,18 @@ package in.animeshpathak.nextbus;
 
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 
+import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -22,6 +26,22 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 	private boolean showWaitDialog = true;
 	private BusArrivalQuery query;
 	private static final String LOG_TAG = "NEXTBUS";
+
+	// We only do this statically because reflection can be costly
+	private static Method executorMethod = executorMethodInit();
+
+	private static Method executorMethodInit() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB
+				&& executorMethod == null) {
+			try {
+				return BusInfoGetterTask.class.getMethod("executeOnExecutor",
+						Executor.class, Object[].class);
+			} catch (Exception e) {
+				Log.e(LOG_TAG, "" + e.getMessage());
+			}
+		}
+		return null;
+	}
 
 	public BusInfoGetterTask(Activity main, BusArrivalQuery query) {
 		this(main, true, query);
@@ -100,6 +120,20 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 			Log.d(LOG_TAG,
 					"We tried to dismiss a a dialog which was not created."
 							+ e.getMessage());
+		}
+	}
+
+	public void execute(ThreadPoolExecutor tpe) {
+		if (executorMethod != null) {
+			try {
+				executorMethod.invoke(this, tpe, new Void[0]);
+			} catch (Exception e) {
+				Log.e(LOG_TAG, "" + e.getMessage());
+				this.execute();
+			}
+		} else {
+			// launch task
+			this.execute();
 		}
 	}
 }
