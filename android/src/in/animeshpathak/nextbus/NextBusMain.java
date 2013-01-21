@@ -293,9 +293,9 @@ public class NextBusMain extends Activity {
 		for (BusLine qLine : linesToSearch) {
 			BusArrivalQuery query = new PhebusArrivalQuery(qLine.getCode(),
 					selectedStop.getCode());
-			// launch task
-			new BusInfoGetterTask(this, false, query)
-					.executeOnExecutor(this.taskExecutor);
+			
+			BusInfoGetterTask big = new BusInfoGetterTask(this, false, query);
+			big.execute(taskExecutor);
 		}
 	}
 
