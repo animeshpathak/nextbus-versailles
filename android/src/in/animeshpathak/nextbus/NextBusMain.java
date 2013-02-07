@@ -27,8 +27,10 @@ import in.animeshpathak.nextbus.timetable.data.BusNetwork;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -139,8 +141,8 @@ public class NextBusMain extends Activity {
 						new OnFavoriteSelectedListener() {
 							@Override
 							public void favoriteSelected(Favorite fav) {
-								BusLine bl = busNet.getLineByName(fav.getLine());
-								BusStop bs = busNet.getStopByName(fav.getStop());
+								BusLine bl = fav.getLine();
+								BusStop bs = fav.getStop();
 								if (bl == null || bs == null) {
 									Log.e(LOG_TAG, "Favorite not found!");
 									return;
@@ -148,8 +150,8 @@ public class NextBusMain extends Activity {
 								updateSpinners(bl, bs);
 								getBusTimings(bl, bs);
 							}
-						}, lineSpinner.getSelectedItem().toString(),
-						stopSpinner.getSelectedItem().toString());
+						}, (BusLine) lineSpinner.getSelectedItem(),
+						(BusStop) stopSpinner.getSelectedItem());
 			}
 		});
 	}
@@ -279,21 +281,35 @@ public class NextBusMain extends Activity {
 			throws IOException, JSONException {
 		// Get all lines which have this stop in their path
 		// Highly inefficient, but Ok for testing
-		List<BusLine> linesToSearch = new ArrayList<BusLine>();
+		Map<BusLine, BusStop> linesToSearch = new TreeMap<BusLine, BusStop>();
 		List<BusLine> allLines = busNet.getLines();
 		for (BusLine cLine : allLines) {
 			if (cLine.getName().startsWith("*"))
 				continue;
 
-			if (cLine.getStops().contains(selectedStop)) {
-				linesToSearch.add(cLine);
+			/*
+			 * Warning: stops might have identical names but different codes.
+			 * This is why we must always query the BusLine object which has
+			 * reference to the correct BusStop object.
+			 */
+			BusStop foundStop = cLine.getFirstStopWithName(
+					selectedStop.getName(), 1);
+			if (foundStop != null) {
+				linesToSearch.put(cLine, foundStop);
 			}
 		}
 
-		for (BusLine qLine : linesToSearch) {
-			BusArrivalQuery query = new PhebusArrivalQuery(qLine.getCode(),
-					selectedStop.getCode());
-			
+		for (Entry<BusLine, BusStop> qLine : linesToSearch.entrySet()) {
+			BusArrivalQuery query;
+
+			if (qLine.getKey().getName().contains("RATP")) {
+				query = new RatpArrivalQuery(qLine.getKey().getCode(), qLine
+						.getValue().getCode());
+			} else {
+				query = new PhebusArrivalQuery(qLine.getKey().getCode(), qLine
+						.getValue().getCode());
+			}
+
 			BusInfoGetterTask big = new BusInfoGetterTask(this, false, query);
 			big.execute(taskExecutor);
 		}
