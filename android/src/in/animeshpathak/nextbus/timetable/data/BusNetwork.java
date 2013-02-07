@@ -44,15 +44,15 @@ public class BusNetwork {
 			Map<String, BusStop> lineStops = parseJson((String) lineName,
 					assetManager.open((String) properties.get(lineName)));
 			BusLine busLine = new BusLine((String) lineName, (String) lineName,
-					lineStops);
+					lineStops.values());
 			busLines.put((String) lineName, busLine);
 		}
 
 		String allLineName = String.format("* (%s)",
 				context.getString(R.string.wildcard_bus_line));
-		busLines.put("*", new BusLine(allLineName, "*", busStops));
+		busLines.put("*", new BusLine(allLineName, "*", busStops.values()));
 	}
-
+	
 	/**
 	 * @return Returns an ordered list of all bus stops in the network
 	 */

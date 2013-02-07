@@ -1,6 +1,13 @@
 package in.animeshpathak.nextbus.timetable.data;
 
-public class BusStop implements Comparable<BusStop> {
+import java.io.Serializable;
+
+public class BusStop implements Comparable<BusStop>, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4871584377720906881L;
+
 	/** The name of the bus stop(e.g., Europe) */
 	private String name;
 
