@@ -40,6 +40,6 @@ public class BusStop implements Comparable<BusStop>, Serializable {
 
 	@Override
 	public int compareTo(BusStop another) {
-		return this.getName().compareTo(another.getName());
+		return this.getCode().compareTo(another.getCode());
 	}
 }

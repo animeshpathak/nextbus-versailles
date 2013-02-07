@@ -2,8 +2,6 @@ package in.animeshpathak.nextbus.favorites;
 
 import in.animeshpathak.nextbus.Constants;
 import in.animeshpathak.nextbus.R;
-import in.animeshpathak.nextbus.timetable.data.BusLine;
-import in.animeshpathak.nextbus.timetable.data.BusStop;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,8 +22,8 @@ public class FavoriteDialog {
 	private AlertDialog dialog;
 
 	public FavoriteDialog(final Activity context,
-			final OnFavoriteSelectedListener listener, final BusLine curLine,
-			final BusStop curStop) {
+			final OnFavoriteSelectedListener listener, final String curLine,
+			final String curStop) {
 
 		try {
 			AlertDialog.Builder builder = new AlertDialog.Builder(context);

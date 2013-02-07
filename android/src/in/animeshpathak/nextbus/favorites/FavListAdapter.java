@@ -60,10 +60,10 @@ public class FavListAdapter extends BaseAdapter {
 		});
 
 		TextView txtType = (TextView) view.findViewById(R.id.textFavLine);
-		txtType.setText(favorites.get(position).getLine().getName());
+		txtType.setText(favorites.get(position).getLine());
 
 		TextView streamId = (TextView) view.findViewById(R.id.textFavStop);
-		streamId.setText(favorites.get(position).getStop().getName());
+		streamId.setText(favorites.get(position).getStop());
 
 		ImageButton removeFavButton = (ImageButton) view
 				.findViewById(R.id.favorites_remove_button);
