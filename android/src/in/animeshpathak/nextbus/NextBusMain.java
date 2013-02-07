@@ -141,8 +141,8 @@ public class NextBusMain extends Activity {
 						new OnFavoriteSelectedListener() {
 							@Override
 							public void favoriteSelected(Favorite fav) {
-								BusLine bl = fav.getLine();
-								BusStop bs = fav.getStop();
+								BusLine bl = busNet.getLineByName(fav.getLine());
+								BusStop bs = bl.getFirstStopWithName(fav.getStop(), 0); 
 								if (bl == null || bs == null) {
 									Log.e(LOG_TAG, "Favorite not found!");
 									return;
@@ -150,8 +150,8 @@ public class NextBusMain extends Activity {
 								updateSpinners(bl, bs);
 								getBusTimings(bl, bs);
 							}
-						}, (BusLine) lineSpinner.getSelectedItem(),
-						(BusStop) stopSpinner.getSelectedItem());
+						}, lineSpinner.getSelectedItem().toString(),
+						stopSpinner.getSelectedItem().toString());
 			}
 		});
 	}
@@ -217,6 +217,12 @@ public class NextBusMain extends Activity {
 		int selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
 		int selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
 
+		if(selectedLineID < 0)
+			selectedLineID = 0;
+		
+		if(selectedStopID < 0)
+			selectedStopID = 0;
+		
 		BusLine bl = busNet.getLines().get(selectedLineID);
 		BusStop bs = bl.getStops().get(selectedStopID);
 		updateSpinners(bl, bs);
@@ -230,8 +236,8 @@ public class NextBusMain extends Activity {
 		SharedPreferences prefs = getPreferences(MODE_PRIVATE);
 		SharedPreferences.Editor editor = prefs.edit();
 
-		BusLine bl = lineAdapter.getItem(lineSpinner.getSelectedItemPosition());
-		BusStop bs = stopAdapter.getItem(stopSpinner.getSelectedItemPosition());
+		BusLine bl = (BusLine) lineSpinner.getSelectedItem();
+		BusStop bs = (BusStop) stopSpinner.getSelectedItem();
 
 		editor.putInt(Constants.SELECTED_LINE, busNet.getLines().indexOf(bl));
 		editor.putInt(Constants.SELECTED_STOP, bl.getStops().indexOf(bs));

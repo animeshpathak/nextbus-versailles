@@ -1,8 +1,6 @@
 package in.animeshpathak.nextbus.favorites;
 
 import in.animeshpathak.nextbus.Constants;
-import in.animeshpathak.nextbus.timetable.data.BusLine;
-import in.animeshpathak.nextbus.timetable.data.BusStop;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,23 +17,21 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 public class Favorite implements Serializable {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 6076230667905908819L;
-	private BusLine lineName;
-	private BusStop stopName;
 
-	public Favorite(BusLine line, BusStop stop) {
+	private static final long serialVersionUID = 0L;
+	private String lineName;
+	private String stopName;
+
+	public Favorite(String line, String stop) {
 		this.lineName = line;
 		this.stopName = stop;
 	}
 
-	public BusLine getLine() {
+	public String getLine() {
 		return lineName;
 	}
 
-	public BusStop getStop() {
+	public String getStop() {
 		return stopName;
 	}
 
@@ -71,9 +67,6 @@ public class Favorite implements Serializable {
 			return (List<Favorite>) ois.readObject();
 		} catch (Exception e) {
 			Log.e(Constants.LOG_TAG, e.getMessage(), e);
-			// Favorites are corrupt. deleting all favorites.
-			prefs.edit().putString(Constants.FAVORITE_LIST, null);
-			prefs.edit().commit();
 			return new ArrayList<Favorite>();
 		}
 	}

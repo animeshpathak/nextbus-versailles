@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 public class BusLine implements Comparable<BusLine>, Serializable {
 	/**
@@ -25,7 +24,7 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	public BusLine(String name, String code, Collection<BusStop> stops) {
 		this.name = name;
 		this.code = code;
-		addUniqueStops(stops);
+		this.stops.addAll(stops);
 	}
 
 	/**
