@@ -3,8 +3,10 @@ package in.animeshpathak.nextbus.timetable.data;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class BusLine implements Comparable<BusLine>, Serializable {
 	/**
@@ -12,40 +14,38 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	 */
 	private static final long serialVersionUID = 235084322448996426L;
 
+	/**
+	 * Maximum edit-distance to consider that two bus stops have identical names
+	 */
+	public static final int MAX_STOPNAME_EDIT_DISTANCE = 2;
+
 	/** The name of the line (e.g., RATP 171) */
 	private String name;
 
 	/** The code of the line (e.g., B171) */
 	private String code;
 
-	/** Ordered list of bus-stops of this line */
-	private Collection<BusStop> stops = new ArrayList<BusStop>();
+	/** Ordered set of bus-stops of this line, filtered by stop name */
+	private Set<BusStop> stops = new TreeSet<BusStop>(
+			new Comparator<BusStop>() {
+				@Override
+				public int compare(BusStop lhs, BusStop rhs) {
+					int edDist = computeEditDistance(lhs.getName(),
+							rhs.getName());
+
+					if (edDist <= MAX_STOPNAME_EDIT_DISTANCE) {
+						// Considering edit distance 2 as identical stops
+						return 0;
+					} else {
+						return lhs.getName().compareTo(rhs.getName());
+					}
+				}
+			});
 
 	public BusLine(String name, String code, Collection<BusStop> stops) {
 		this.name = name;
 		this.code = code;
 		this.stops.addAll(stops);
-	}
-
-	/**
-	 * Avoid having multiple stops with the same name or similar.
-	 * Not very efficient due to the use of the edit distance function
-	 * (e.g., "Gabriel Peri" vs. "Gabriel P\u00e9ri" with accent)
-	 * 
-	 * @param theStops
-	 */
-	private void addUniqueStops(Collection<BusStop> theStops) {
-		for (BusStop busStop : theStops) {
-			boolean stopExists = false;
-			for (BusStop busStop2 : this.stops) {
-				int edDist = computeEditDistance(busStop2.getName(), busStop.getName());
-				if(edDist <= 1)
-					stopExists = true;
-			}
-			
-			if(!stopExists)
-				this.stops.add(busStop);
-		}
 	}
 
 	/**
@@ -66,9 +66,7 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	 * @return Returns an ordered list of bus stop references
 	 */
 	public List<BusStop> getStops() {
-		List<BusStop> orderedStops = new ArrayList<BusStop>(stops);
-		Collections.sort(orderedStops);
-		return orderedStops;
+		return new ArrayList<BusStop>(stops);
 	}
 
 	@Override
@@ -82,18 +80,18 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	}
 
 	/**
-	 * Finds if a stop with a specific name exists on the line.
-	 * An Max edit distance allows finding stops with small errors in their name
-	 * (e.g., "Gabriel Peri" vs. "Gabriel P\u00e9ri" with accent)
+	 * Finds if a stop with a specific name exists on the line. An Max edit
+	 * distance allows finding stops with small errors in their name (e.g.,
+	 * "Gabriel Peri" vs. "Gabriel P\u00e9ri" with accent)
 	 * 
 	 * @param stopName
 	 * @return
 	 */
-	public BusStop getFirstStopWithName(String stopName, int maxEditDistance) {
+	public BusStop getFirstStopWithSimilarName(String stopName) {
 		Collection<BusStop> stops = getStops();
 		for (BusStop busStop : stops) {
 			int edDist = computeEditDistance(stopName, busStop.getName());
-			if(edDist <= maxEditDistance)
+			if (edDist <= MAX_STOPNAME_EDIT_DISTANCE)
 				return busStop;
 		}
 		return null;
