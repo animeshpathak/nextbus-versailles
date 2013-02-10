@@ -27,6 +27,7 @@ import in.animeshpathak.nextbus.timetable.data.BusNetwork;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -142,7 +143,8 @@ public class NextBusMain extends Activity {
 							@Override
 							public void favoriteSelected(Favorite fav) {
 								BusLine bl = busNet.getLineByName(fav.getLine());
-								BusStop bs = bl.getFirstStopWithName(fav.getStop(), 0); 
+								BusStop bs = bl.getFirstStopWithSimilarName(fav
+										.getStop());
 								if (bl == null || bs == null) {
 									Log.e(LOG_TAG, "Favorite not found!");
 									return;
@@ -167,16 +169,20 @@ public class NextBusMain extends Activity {
 			BusStop oldSelection = stopAdapter.getItem(stopSpinner
 					.getSelectedItemPosition());
 			stopAdapter.clear();
-			List<BusStop> stops = lineAdapter.getItem(pos).getStops();
+
+			BusLine newLine = lineAdapter.getItem(pos);
+			Collection<BusStop> stops = newLine.getStops();
 			for (BusStop busStop : stops) {
 				// addAll method is unavailable in old APIs
 				stopAdapter.add(busStop);
 			}
 			stopAdapter.notifyDataSetChanged();
 
-			// The stop exists in the new selection
-			if (stops.contains(oldSelection)) {
-				stopSpinner.setSelection(stopAdapter.getPosition(oldSelection));
+			// Find if there exists a stop with similar name on this line
+			BusStop newStop = newLine.getFirstStopWithSimilarName(oldSelection
+					.getName());
+			if (newStop != null) {
+				stopSpinner.setSelection(stopAdapter.getPosition(newStop));
 			} else {
 				stopSpinner.setSelection(0);
 			}
@@ -193,7 +199,7 @@ public class NextBusMain extends Activity {
 		lineSpinner.setOnItemSelectedListener(null);
 		lineSpinner.setSelection(lineAdapter.getPosition(line), false);
 		stopAdapter.clear();
-		List<BusStop> stops = line.getStops();
+		Collection<BusStop> stops = line.getStops();
 		for (BusStop busStop : stops) {
 			// addAll method is unavailable in old APIs
 			stopAdapter.add(busStop);
@@ -217,14 +223,24 @@ public class NextBusMain extends Activity {
 		int selectedLineID = prefs.getInt(Constants.SELECTED_LINE, 0);
 		int selectedStopID = prefs.getInt(Constants.SELECTED_STOP, 0);
 
-		if(selectedLineID < 0)
+		List<BusLine> theLines = busNet.getLines();
+
+		if (selectedLineID < 0 || theLines.size() <= selectedLineID) {
 			selectedLineID = 0;
-		
-		if(selectedStopID < 0)
+			Log.w(LOG_TAG, "onResume() selectedLineID is out of bounds: "
+					+ selectedLineID);
+		}
+
+		BusLine bl = theLines.get(selectedLineID);
+		List<BusStop> lineStops = bl.getStops();
+
+		if (selectedStopID < 0 || lineStops.size() <= selectedStopID) {
 			selectedStopID = 0;
-		
-		BusLine bl = busNet.getLines().get(selectedLineID);
-		BusStop bs = bl.getStops().get(selectedStopID);
+			Log.w(LOG_TAG, "onResume() selectedStopID is out of bounds: "
+					+ selectedStopID);
+		}
+
+		BusStop bs = lineStops.get(selectedStopID);
 		updateSpinners(bl, bs);
 	}
 
@@ -239,8 +255,17 @@ public class NextBusMain extends Activity {
 		BusLine bl = (BusLine) lineSpinner.getSelectedItem();
 		BusStop bs = (BusStop) stopSpinner.getSelectedItem();
 
-		editor.putInt(Constants.SELECTED_LINE, busNet.getLines().indexOf(bl));
-		editor.putInt(Constants.SELECTED_STOP, bl.getStops().indexOf(bs));
+		int lineIndex = busNet.getLines().indexOf(bl);
+		int stopIndex = bl.getStops().indexOf(bs);
+
+		if (lineIndex < 0 || stopIndex < 0) {
+			lineIndex = 0;
+			stopIndex = 0;
+			Log.w(LOG_TAG, "onPause() lineIndex/stopIndex invalid");
+		}
+
+		editor.putInt(Constants.SELECTED_LINE, lineIndex);
+		editor.putInt(Constants.SELECTED_STOP, stopIndex);
 		editor.commit();
 		super.onPause();
 	}
@@ -248,9 +273,6 @@ public class NextBusMain extends Activity {
 	private void getBusTimings(BusLine selectedLine, BusStop selectedStop) {
 		try {
 			// Clearing old data
-			// TextView busTimingsView = (TextView) this
-			// .findViewById(R.id.bus_timings);
-			// busTimingsView.setText(this.getString(R.string.bus_times));
 			LinearLayout busTimingsViewContainer = (LinearLayout) this
 					.findViewById(R.id.bus_section);
 			busTimingsViewContainer.removeAllViews();
@@ -298,8 +320,8 @@ public class NextBusMain extends Activity {
 			 * This is why we must always query the BusLine object which has
 			 * reference to the correct BusStop object.
 			 */
-			BusStop foundStop = cLine.getFirstStopWithName(
-					selectedStop.getName(), 1);
+			BusStop foundStop = cLine.getFirstStopWithSimilarName(selectedStop
+					.getName());
 			if (foundStop != null) {
 				linesToSearch.put(cLine, foundStop);
 			}
