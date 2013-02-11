@@ -17,7 +17,7 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	/**
 	 * Maximum edit-distance to consider that two bus stops have identical names
 	 */
-	public static final int MAX_STOPNAME_EDIT_DISTANCE = 2;
+	public static final int MAX_STOPNAME_EDIT_DISTANCE = 1;
 
 	/** The name of the line (e.g., RATP 171) */
 	private String name;
