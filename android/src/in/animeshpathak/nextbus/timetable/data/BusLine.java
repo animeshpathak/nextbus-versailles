@@ -15,9 +15,9 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	private static final long serialVersionUID = 235084322448996426L;
 
 	/**
-	 * Maximum edit-distance to consider that two bus stops have identical names
+	 * Maximum Hamming distance to consider that two bus stops have identical names
 	 */
-	public static final int MAX_STOPNAME_EDIT_DISTANCE = 1;
+	public static final int MAX_STOPNAME_ERROR = 2;
 
 	/** The name of the line (e.g., RATP 171) */
 	private String name;
@@ -30,10 +30,10 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 			new Comparator<BusStop>() {
 				@Override
 				public int compare(BusStop lhs, BusStop rhs) {
-					int edDist = computeEditDistance(lhs.getName(),
+					int edDist = computeHammingDistance(lhs.getName(),
 							rhs.getName());
 
-					if (edDist <= MAX_STOPNAME_EDIT_DISTANCE) {
+					if (edDist <= MAX_STOPNAME_ERROR) {
 						// Considering edit distance 2 as identical stops
 						return 0;
 					} else {
@@ -90,46 +90,22 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	public BusStop getFirstStopWithSimilarName(String stopName) {
 		Collection<BusStop> stops = getStops();
 		for (BusStop busStop : stops) {
-			int edDist = computeEditDistance(stopName, busStop.getName());
-			if (edDist <= MAX_STOPNAME_EDIT_DISTANCE)
+			int edDist = computeHammingDistance(stopName, busStop.getName());
+			if (edDist <= MAX_STOPNAME_ERROR)
 				return busStop;
 		}
 		return null;
 	}
 
-	/**
-	 * Computes the Levenshtein distance between the two string parameters
-	 * Function obtained from:
-	 * http://rosettacode.org/wiki/Levenshtein_distance#Java
-	 * 
-	 * @param s1
-	 * @param s2
-	 * @return The edit distance.
-	 */
-	public static int computeEditDistance(String s1, String s2) {
-		s1 = s1.toLowerCase();
-		s2 = s2.toLowerCase();
-
-		int[] costs = new int[s2.length() + 1];
-		for (int i = 0; i <= s1.length(); i++) {
-			int lastValue = i;
-			for (int j = 0; j <= s2.length(); j++) {
-				if (i == 0)
-					costs[j] = j;
-				else {
-					if (j > 0) {
-						int newValue = costs[j - 1];
-						if (s1.charAt(i - 1) != s2.charAt(j - 1))
-							newValue = Math.min(Math.min(newValue, lastValue),
-									costs[j]) + 1;
-						costs[j - 1] = lastValue;
-						lastValue = newValue;
-					}
-				}
-			}
-			if (i > 0)
-				costs[s2.length()] = lastValue;
+	public static int computeHammingDistance(String s1, String s2) {
+		if (s1.length() != s2.length())
+			return Integer.MAX_VALUE;
+		int errors = 0;
+		for (int k = 0; k < s1.length(); ++k) {
+			if (s1.charAt(k) != s2.charAt(k))
+				errors++;
 		}
-		return costs[s2.length()];
+		return errors;
 	}
+
 }
