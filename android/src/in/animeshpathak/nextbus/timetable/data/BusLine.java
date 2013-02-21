@@ -15,7 +15,8 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 	private static final long serialVersionUID = 235084322448996426L;
 
 	/**
-	 * Maximum Hamming distance to consider that two bus stops have identical names
+	 * Maximum Hamming distance to consider that two bus stops have identical
+	 * names
 	 */
 	public static final int MAX_STOPNAME_ERROR = 2;
 
@@ -24,6 +25,9 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 
 	/** The code of the line (e.g., B171) */
 	private String code;
+
+	/** The operating Company (e.g., Phebus, RATP, Veolia) */
+	private String company;
 
 	/** Ordered set of bus-stops of this line, filtered by stop name */
 	private Set<BusStop> stops = new TreeSet<BusStop>(
@@ -46,6 +50,14 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 		this.name = name;
 		this.code = code;
 		this.stops.addAll(stops);
+
+		if (name.trim().toUpperCase().startsWith("RATP")) {
+			this.company = "RATP";
+		} else if (name.trim().toUpperCase().startsWith("VEOLIA")) {
+			this.company = "VEOLIA";
+		} else {
+			this.company = "PHEBUS";
+		}
 	}
 
 	/**
@@ -108,4 +120,7 @@ public class BusLine implements Comparable<BusLine>, Serializable {
 		return errors;
 	}
 
+	public String getCompany() {
+		return company;
+	}
 }

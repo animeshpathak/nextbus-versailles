@@ -1,5 +1,6 @@
 package in.animeshpathak.nextbus;
 
+import in.animeshpathak.nextbus.analytics.Analytics;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 
 import java.lang.reflect.Method;
@@ -43,10 +44,6 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 		return null;
 	}
 
-	public BusInfoGetterTask(Activity main, BusArrivalQuery query) {
-		this(main, true, query);
-	}
-
 	public BusInfoGetterTask(Activity main, boolean showWaitDialog,
 			BusArrivalQuery query) {
 		this.mainActivity = main;
@@ -85,7 +82,7 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 
 	@Override
 	protected Void doInBackground(Void... params) {
-		query.postQuery();
+		Analytics.busArrivalQuery(query.postQuery());
 		Log.d(LOG_TAG, "Done doing my stuff. " + "\nGot response: "
 				+ "Sending message for dismissing dialog now.");
 		return null;
