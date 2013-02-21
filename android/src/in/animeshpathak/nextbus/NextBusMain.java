@@ -20,8 +20,7 @@ import in.animeshpathak.nextbus.favorites.Favorite;
 import in.animeshpathak.nextbus.favorites.FavoriteDialog;
 import in.animeshpathak.nextbus.favorites.FavoriteDialog.OnFavoriteSelectedListener;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
-import in.animeshpathak.nextbus.timetable.PhebusArrivalQuery;
-import in.animeshpathak.nextbus.timetable.RatpArrivalQuery;
+import in.animeshpathak.nextbus.timetable.BusArrivalQueryFactory;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusNetwork;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
@@ -276,21 +275,14 @@ public class NextBusMain extends Activity {
 			LinearLayout busTimingsViewContainer = (LinearLayout) this
 					.findViewById(R.id.bus_section);
 			busTimingsViewContainer.removeAllViews();
-			BusArrivalQuery query = null;
 
 			if (selectedLine.getName().startsWith("*")) {
 				getMultipleBusTimings(selectedStop);
-				return;
-			} else if (selectedLine.getName().startsWith("RATP")) {
-				query = new RatpArrivalQuery(selectedLine.getCode(),
-						selectedStop.getCode());
 			} else {
-				query = new PhebusArrivalQuery(selectedLine.getCode(),
-						selectedStop.getCode());
+				BusArrivalQuery query = BusArrivalQueryFactory.getInstance(
+						selectedLine, selectedStop);
+				new BusInfoGetterTask(this, false, query).execute();
 			}
-
-			// launch task
-			new BusInfoGetterTask(this, false, query).execute();
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
 		}
@@ -328,16 +320,8 @@ public class NextBusMain extends Activity {
 		}
 
 		for (Entry<BusLine, BusStop> qLine : linesToSearch.entrySet()) {
-			BusArrivalQuery query;
-
-			if (qLine.getKey().getName().contains("RATP")) {
-				query = new RatpArrivalQuery(qLine.getKey().getCode(), qLine
-						.getValue().getCode());
-			} else {
-				query = new PhebusArrivalQuery(qLine.getKey().getCode(), qLine
-						.getValue().getCode());
-			}
-
+			BusArrivalQuery query = BusArrivalQueryFactory.getInstance(
+					qLine.getKey(), qLine.getValue());
 			BusInfoGetterTask big = new BusInfoGetterTask(this, false, query);
 			big.execute(taskExecutor);
 		}

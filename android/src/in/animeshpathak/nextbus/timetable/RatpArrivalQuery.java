@@ -1,5 +1,8 @@
 package in.animeshpathak.nextbus.timetable;
 
+import in.animeshpathak.nextbus.timetable.data.BusLine;
+import in.animeshpathak.nextbus.timetable.data.BusStop;
+
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,25 +24,28 @@ import com.google.code.regexp.NamedPattern;
 public class RatpArrivalQuery extends BusArrivalQuery {
 
 	private static String LOG_TAG = "NEXTBUS_RatpArrivalQuery";
-	private String RATP_SERVICE_URI = "http://www.ratp.fr/horaires/fr/ratp/bus/prochains_passages/PP/";
+	private String RATP_SERVICE_URI = "http://www.ratp.fr/horaires/fr/ratp/bus/prochains_passages/PP";
 
 	private CharSequence fallbackResult;
 	private boolean valid = false;
-	private Map<String, BusArrivalInfo> queryResult;
 
 	private static final NamedPattern minutesPattern = NamedPattern
 			.compile("[^\\d]*(?<minutes>[0-9]+) mn.*");
 	private static final NamedPattern directionPattern = NamedPattern
 			.compile(".*Direction : (?<direction>.+)");
 
-	public RatpArrivalQuery(String lineCode, String stopCode) {
+	protected RatpArrivalQuery(BusLine bl, BusStop bs) {
+		this.busLine = bl;
+		this.busStop = bs;
+		this.busLineCode = bl.getCode();
+
 		// removing RATP-
-		if (!lineCode.startsWith("RATP-") || lineCode.length() < 5) {
-			Log.e(LOG_TAG, "Wrong lineCode: " + lineCode);
+		if (!busLineCode.startsWith("RATP-") || busLineCode.length() < 6) {
+			Log.e(LOG_TAG, "Wrong lineCode: " + bl);
 			return;
 		}
-		this.lineCode = lineCode.substring(5);
-		this.stopCode = stopCode;
+
+		this.busLineCode = busLineCode.substring(5);
 		fallbackResult = "";
 	}
 
@@ -64,8 +70,8 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 		}
 
 		BusArrivalInfo binfo = new BusArrivalInfo();
-		binfo.direction = direction.get(0).text();
-		NamedMatcher dm = directionPattern.matcher(direction.get(0).text());
+		binfo.direction = direction.get(0).ownText();
+		NamedMatcher dm = directionPattern.matcher(direction.get(0).ownText());
 		if (dm.matches()) {
 			binfo.direction = dm.group("direction");
 		}
@@ -98,17 +104,17 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 
 			binfo.mention[i] = 0;
 
-			if (td.get(0).text().toLowerCase().contains("estime")) {
+			if (td.get(0).ownText().toLowerCase().contains("estime")) {
 				binfo.mention[i] |= BusArrivalInfo.MENTION_THEORETICAL;
-			} else if (td.get(0).text().toLowerCase().contains("indispo")
-					|| td.get(0).text().toLowerCase()
+			} else if (td.get(0).ownText().toLowerCase().contains("indispo")
+					|| td.get(0).ownText().toLowerCase()
 							.contains("pas de service")) {
 				binfo.mention[i] |= BusArrivalInfo.MENTION_UNKNOWN;
 			}
 
-			NamedMatcher m = minutesPattern.matcher(td.get(1).text());
+			NamedMatcher m = minutesPattern.matcher(td.get(1).ownText());
 
-			if (td.get(0).text().toLowerCase().contains("a l'arret")) {
+			if (td.get(0).ownText().toLowerCase().contains("a l'arret")) {
 				binfo.arrivalMillis[i] = 1;
 			} else if (m.matches()) {
 				String mins = m.group("minutes");
@@ -140,13 +146,11 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 
 	// This executes a POST and gets the actual info from the website
 	// Thanks to http://www.androidsnippets.org/snippets/36/
-	private String getBusTimings(String suffix) {
+	private byte[] getBusTimings(String suffix) {
 		// Create a new HttpClient and Get Header
 		HttpClient httpclient = new DefaultHttpClient();
-		HttpGet httppost = new HttpGet(RATP_SERVICE_URI + "/" + lineCode + "/"
-				+ stopCode + "/" + suffix);
-
-		String errorMessage = "";
+		HttpGet httppost = new HttpGet(RATP_SERVICE_URI + "/" + busLineCode
+				+ "/" + busStop.getCode() + "/" + suffix);
 
 		try {
 			Log.d(LOG_TAG, "starting POST request now");
@@ -157,25 +161,39 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 			ByteArrayOutputStream myBaos = new ByteArrayOutputStream();
 
 			response.getEntity().writeTo(myBaos);
-			return myBaos.toString();
-
+			return myBaos.toByteArray();
 		} catch (Exception e) {
-			Log.e(LOG_TAG, e.getMessage(), e);
-			errorMessage = e.getMessage();
+			Log.e(LOG_TAG, "An error (\"" + e.getMessage()
+					+ "\") happenned in the query.", e);
+			return null;
 		}
-
-		return "An error (\"" + errorMessage
-				+ "\") happenned in the query. Please see logs.";
 	}
 
 	@Override
-	public boolean postQuery() {
+	public ResponseStats postQuery() {
+		long initTime = System.currentTimeMillis();
 		Map<String, BusArrivalInfo> map = new HashMap<String, BusArrivalQuery.BusArrivalInfo>();
-		parseResult(map, getBusTimings("A"));
-		parseResult(map, getBusTimings("R"));
+		byte[] dataDirectionA = getBusTimings("A");
+		byte[] dataDirectionR = getBusTimings("R");
+
+		ResponseStats stats = new ResponseStats();
+		stats.setBusLine(this.busLine);
+		stats.setBusStop(this.busStop);
+		stats.setResponseTime(System.currentTimeMillis() - initTime);
+
+		if (dataDirectionA == null || dataDirectionR == null) {
+			this.valid = false;
+			return stats;
+		}
+
+		parseResult(map, new String(dataDirectionA));
+		parseResult(map, new String(dataDirectionR));
 
 		this.queryResult = map;
 		this.valid = (map != null && map.size() > 0);
-		return this.valid;
+		stats.setParsingTime(System.currentTimeMillis() - initTime
+				- stats.getResponseTime());
+		stats.setValid(this.valid);
+		return stats;
 	}
 }

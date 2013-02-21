@@ -1,5 +1,8 @@
 package in.animeshpathak.nextbus.timetable;
 
+import in.animeshpathak.nextbus.timetable.data.BusLine;
+import in.animeshpathak.nextbus.timetable.data.BusStop;
+
 import java.io.ByteArrayOutputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -8,7 +11,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -79,11 +84,11 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 
 	private CharSequence fallbackResult;
 	private boolean valid = false;
-	private Map<String, BusArrivalInfo> queryResult;
 
-	public PhebusArrivalQuery(String lineCode, String stopCode) {
-		this.lineCode = lineCode;
-		this.stopCode = stopCode;
+	protected PhebusArrivalQuery(BusLine lineCode, BusStop stopCode) {
+		this.busLine = lineCode;
+		this.busStop = stopCode;
+		this.busLineCode = busLine.getCode();
 	}
 
 	@Override
@@ -103,19 +108,19 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 
 	// This executes a POST and gets the actual info from the website
 	// Thanks to http://www.androidsnippets.org/snippets/36/
-	private String getBusTimings() {
+	private byte[] getBusTimingsData() {
 		// Create a new HttpClient and Post Header
 		HttpClient httpclient = new DefaultHttpClient();
 		HttpPost httppost = new HttpPost(PHEBUS_SERVICE_URI);
 
-		String errorMessage = "";
-
 		try {
 			// Add your data
 			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-			Log.d(LOG_TAG, "Getting info for stop id " + stopCode);
-			nameValuePairs.add(new BasicNameValuePair("arret", stopCode));
-			nameValuePairs.add(new BasicNameValuePair("ligne", lineCode));
+			Log.d(LOG_TAG, "Getting info for stop id " + busStop);
+			nameValuePairs.add(new BasicNameValuePair("arret", busStop
+					.getCode()));
+			nameValuePairs.add(new BasicNameValuePair("ligne", busLine
+					.getCode()));
 			httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
 			Log.d(LOG_TAG, "starting POST request now");
@@ -126,16 +131,13 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 			ByteArrayOutputStream myBaos = new ByteArrayOutputStream();
 
 			response.getEntity().writeTo(myBaos);
-			String escapedString = myBaos.toString();
-			return StringEscapeUtils.unescapeJavaScript(escapedString);
+			return myBaos.toByteArray();
 
 		} catch (Exception e) {
-			Log.e(LOG_TAG, e.getMessage(), e);
-			errorMessage = e.getMessage();
+			Log.e(LOG_TAG, "An error (\"" + e.getMessage()
+					+ "\") happenned in the query.", e);
+			return null;
 		}
-
-		return "An error (\"" + errorMessage
-				+ "\") happenned in the query. Please see logs.";
 	}
 
 	/**
@@ -265,7 +267,7 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 	 * @throws ParseException
 	 */
 	private int frenchHourToArrivalMillis(String st) throws ParseException {
-		DateFormat format = new SimpleDateFormat("hh'h'mm");
+		DateFormat format = new SimpleDateFormat("hh'h'mm", Locale.FRANCE);
 		Calendar currentTime = Calendar.getInstance();
 		Calendar foundTime = Calendar.getInstance();
 		foundTime.setTime(format.parse(st));
@@ -280,10 +282,24 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 	}
 
 	@Override
-	public boolean postQuery() {
-		String serverResponse = getBusTimings();
-		CharSequence serverResponseInChars = Html.fromHtml(serverResponse,
-				null, new TagHandler() {
+	public ResponseStats postQuery() {
+		long initTime = System.currentTimeMillis();
+		byte[] serverResponse = getBusTimingsData();
+
+		ResponseStats stats = new ResponseStats();
+		stats.setBusLine(this.busLine);
+		stats.setBusStop(this.busStop);
+		stats.setResponseTime(System.currentTimeMillis() - initTime);
+
+		if (serverResponse == null) {
+			this.valid = false;
+			return stats;
+		}
+
+		String escapedString = StringEscapeUtils.unescapeJavaScript(new String(
+				serverResponse));
+		CharSequence serverResponseInChars = Html.fromHtml(escapedString, null,
+				new TagHandler() {
 					@Override
 					public void handleTag(boolean opening, String tag,
 							Editable output, XMLReader xmlReader) {
@@ -293,7 +309,11 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 				});
 		fallbackResult = removeExcessBlankLines(serverResponseInChars);
 		this.queryResult = parseResult(fallbackResult);
+
 		this.valid = (queryResult != null);
-		return this.valid;
+		stats.setParsingTime(System.currentTimeMillis() - initTime
+				- stats.getResponseTime());
+		stats.setValid(this.valid);
+		return stats;
 	}
 }

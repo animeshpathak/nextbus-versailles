@@ -98,6 +98,8 @@
             android:id="@+id/favorites_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:layout_alignParentBottom="true"
             android:text="@string/favoritebutton" />
 
@@ -108,6 +110,8 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
             android:text="@string/version_name"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
         <Button
@@ -116,6 +120,8 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:text="@string/feedbackbutton" />
     </RelativeLayout>
 
