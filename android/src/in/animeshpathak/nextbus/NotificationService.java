@@ -142,7 +142,10 @@ public class NotificationService extends IntentService implements Runnable {
 				publishNotification();
 
 				try {
-					Thread.sleep(30 * 1000);
+					if((arrival.getMention(0) & BusArrivalInfo.MENTION_UNKNOWN) == 0)
+						Thread.sleep(sleepMsFunction(arrival.getMillis(0)));
+					else
+						Thread.sleep(60000);
 				} catch (InterruptedException e) {
 
 				}
@@ -184,5 +187,17 @@ public class NotificationService extends IntentService implements Runnable {
 
 	public static boolean notifExists(String lsd) {
 		return notifications.containsKey(lsd);
+	}
+	
+	/**
+	 * Return how many ms to sleep depending on next arrival.
+	 * This allows to refresh frequently when there is little time left until arrival,
+	 * while saving battery if the bus will arrive much later.
+	 * @param msUntilArrival
+	 * @return
+	 */
+	public static int sleepMsFunction(int msUntilArrival){
+		System.err.println("To sleep: " + (msUntilArrival * 6 / 60 / 1000));
+		return msUntilArrival * 6 / 60;
 	}
 }
