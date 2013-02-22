@@ -94,37 +94,37 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 			return;
 		}
 
-		binfo.mention = new int[tr.size()];
-		binfo.arrivalMillis = new int[tr.size()];
-
 		for (int i = 0; i < tr.size(); i++) {
+			int mention = 0;
+			int arrivalMillis = 0;
+			
 			Elements td = tr.get(i).getElementsByTag("td");
 			if (td == null || td.size() < 2)
 				continue;
 
-			binfo.mention[i] = 0;
-
 			if (td.get(0).ownText().toLowerCase().contains("estime")) {
-				binfo.mention[i] |= BusArrivalInfo.MENTION_THEORETICAL;
+				mention |= BusArrivalInfo.MENTION_THEORETICAL;
 			} else if (td.get(0).ownText().toLowerCase().contains("indispo")
 					|| td.get(0).ownText().toLowerCase()
 							.contains("pas de service")) {
-				binfo.mention[i] |= BusArrivalInfo.MENTION_UNKNOWN;
+				mention |= BusArrivalInfo.MENTION_UNKNOWN;
 			}
 
 			NamedMatcher m = minutesPattern.matcher(td.get(1).ownText());
 
 			if (td.get(0).ownText().toLowerCase().contains("a l'arret")) {
-				binfo.arrivalMillis[i] = 1;
+				arrivalMillis = 1;
 			} else if (m.matches()) {
 				String mins = m.group("minutes");
-				binfo.arrivalMillis[i] = Integer.parseInt(mins) * 60 * 1000;
-				if (binfo.arrivalMillis[i] == 0) {
-					binfo.mention[i] |= BusArrivalInfo.MENTION_APPROACHING;
+				arrivalMillis = Integer.parseInt(mins) * 60 * 1000;
+				if (arrivalMillis == 0) {
+					mention |= BusArrivalInfo.MENTION_APPROACHING;
 				}
 			} else {
-				binfo.mention[i] |= BusArrivalInfo.MENTION_UNKNOWN;
+				mention |= BusArrivalInfo.MENTION_UNKNOWN;
 			}
+			
+			binfo.addArrival(arrivalMillis, mention);
 		}
 		map.put(binfo.direction, binfo);
 	}

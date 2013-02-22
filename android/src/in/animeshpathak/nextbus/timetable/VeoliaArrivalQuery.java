@@ -91,18 +91,16 @@ public class VeoliaArrivalQuery extends BusArrivalQuery {
 			return;
 		}
 
-		binfo.mention = new int[attenteSpans.size()];
-		binfo.arrivalMillis = new int[attenteSpans.size()];
-
 		for (int i = 0; i < attenteSpans.size(); i++) {
 			Element busArrival = attenteSpans.get(i);
 			if (busArrival == null)
 				continue;
 
-			binfo.mention[i] = 0;
+			int mention = 0;
+			int arrivalMillis = 0;
 
 			if (busArrival.className().equals("temps_theorique")) {
-				binfo.mention[i] |= BusArrivalInfo.MENTION_THEORETICAL;
+				mention |= BusArrivalInfo.MENTION_THEORETICAL;
 			}
 
 			String busTimings = busArrival.ownText();
@@ -126,13 +124,15 @@ public class VeoliaArrivalQuery extends BusArrivalQuery {
 					continue;
 				}
 
-				binfo.arrivalMillis[i] = hoursMs + minMs;
-				if (binfo.arrivalMillis[i] < 1500 * 60) {
-					binfo.mention[i] |= BusArrivalInfo.MENTION_APPROACHING;
+				arrivalMillis = hoursMs + minMs;
+				if (arrivalMillis < 1500 * 60) {
+					mention |= BusArrivalInfo.MENTION_APPROACHING;
 				}
 			} else {
-				binfo.mention[i] |= BusArrivalInfo.MENTION_UNKNOWN;
+				mention |= BusArrivalInfo.MENTION_UNKNOWN;
 			}
+
+			binfo.addArrival(arrivalMillis, mention);
 		}
 		map.put(binfo.direction, binfo);
 	}
