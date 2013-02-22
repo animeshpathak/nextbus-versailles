@@ -2,10 +2,11 @@ package in.animeshpathak.nextbus.timetable;
 
 import in.animeshpathak.nextbus.NotificationService;
 import in.animeshpathak.nextbus.R;
-import in.animeshpathak.nextbus.timetable.BusArrivalQuery.BusArrivalInfo;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -58,29 +59,29 @@ public abstract class BusArrivalQuery {
 		appendWithStyle(ssb, c.getString(R.string.bus_text_direction) + " "
 				+ busInfo.direction + "\n", new TextAppearanceSpan(c,
 				R.style.DefaultBusTextAppearance));
-		for (int i = 0; i < busInfo.arrivalMillis.length; i++) {
-			int totalMillis = busInfo.arrivalMillis[i];
+		for (int i = 0; i < busInfo.size(); i++) {
+			int totalMillis = busInfo.getMillis(i);
 
 			ssb.append("\t");
 
 			// If bus is not approaching we print the time
-			if ((busInfo.mention[i] & (BusArrivalInfo.MENTION_APPROACHING | BusArrivalInfo.MENTION_UNKNOWN)) == 0) {
+			if ((busInfo.getMention(i) & (BusArrivalInfo.MENTION_APPROACHING | BusArrivalInfo.MENTION_UNKNOWN)) == 0) {
 				appendWithStyle(
 						ssb,
 						" " + formatTimeDelta(c, totalMillis),
 						new TextAppearanceSpan(c, R.style.BlueBusTextAppearance));
 			}
 			String mention = "";
-			if ((busInfo.mention[i] & BusArrivalInfo.MENTION_APPROACHING) != 0) {
+			if ((busInfo.getMention(i) & BusArrivalInfo.MENTION_APPROACHING) != 0) {
 				mention += " " + c.getString(R.string.bus_text_approaching);
 			}
-			if ((busInfo.mention[i] & BusArrivalInfo.MENTION_UNKNOWN) != 0) {
+			if ((busInfo.getMention(i) & BusArrivalInfo.MENTION_UNKNOWN) != 0) {
 				mention += " " + c.getString(R.string.bus_text_unavailable);
 			}
-			if ((busInfo.mention[i] & BusArrivalInfo.MENTION_THEORETICAL) != 0) {
+			if ((busInfo.getMention(i) & BusArrivalInfo.MENTION_THEORETICAL) != 0) {
 				mention += " " + c.getString(R.string.bus_text_theoretical);
 			}
-			if ((busInfo.mention[i] & BusArrivalInfo.MENTION_LAST) != 0) {
+			if ((busInfo.getMention(i) & BusArrivalInfo.MENTION_LAST) != 0) {
 				mention += " " + c.getString(R.string.bus_text_last);
 			}
 			appendWithStyle(ssb, mention + "\n", new TextAppearanceSpan(c,
@@ -180,8 +181,25 @@ public abstract class BusArrivalQuery {
 		public static final int MENTION_UNKNOWN = 8;
 
 		public String direction;
-		public int arrivalMillis[];
-		public int mention[];
+		private List<Integer> arrivalMillis = new ArrayList<Integer>();
+		private List<Integer> mentions = new ArrayList<Integer>();
+
+		public void addArrival(int arrMillis, int mention) {
+			arrivalMillis.add(arrMillis);
+			mentions.add(mention);
+		}
+
+		public int size() {
+			return arrivalMillis.size();
+		}
+
+		public int getMention(int i) {
+			return mentions.get(i);
+		}
+
+		public int getMillis(int i) {
+			return arrivalMillis.get(i);
+		}
 	}
 
 	public SpannableStringBuilder appendWithStyle(

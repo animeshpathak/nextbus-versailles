@@ -55,7 +55,7 @@ public class NotificationService extends IntentService implements Runnable {
 						intent.getStringExtra("direction"));
 				notifications.put(lsd, this);
 				if (!query.isValid()
-						|| (arrival.mention[0] & BusArrivalInfo.MENTION_UNKNOWN) != 0) {
+						|| (arrival.getMention(0) & BusArrivalInfo.MENTION_UNKNOWN) != 0) {
 					this.updateError = true;
 				}
 
@@ -82,7 +82,7 @@ public class NotificationService extends IntentService implements Runnable {
 
 		if (!updateError) {
 			notif.icon = R.drawable.bus_icon_newer;
-			int minutesLeft = arrival.arrivalMillis[0] / 60000;
+			int minutesLeft = arrival.getMillis(0) / 60000;
 			// The arrival time is less than 16 minutes
 			if (minutesLeft < 16) {
 				notif.icon = timeIcons[minutesLeft];
@@ -92,7 +92,7 @@ public class NotificationService extends IntentService implements Runnable {
 			notifTitle = query.getBusLine().getName()
 					+ " "
 					+ BusArrivalQuery.formatTimeDelta(this,
-							arrival.arrivalMillis[0]);
+							arrival.getMillis(0));
 		} else {
 			notif.icon = R.drawable.bus_update_error;
 			notifTitle = query.getBusLine().getName();
@@ -106,8 +106,8 @@ public class NotificationService extends IntentService implements Runnable {
 		 * existing activity (e.g., from a Notification).
 		 * https://groups.google.com/forum/?fromgroups=#!topic/android-developers/DibTfwnfZ-s
 		 * 
-		 * Basically acting as the default application launcher. 
-		 * This avoids the duplication of activities.
+		 * Basically acting as the default application launcher. This avoids the
+		 * duplication of activities.
 		 */
 		Intent notificationIntent = new Intent(Intent.ACTION_MAIN);
 		notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -155,7 +155,7 @@ public class NotificationService extends IntentService implements Runnable {
 				Map<String, BusArrivalInfo> resp = query.getNextArrivals();
 				if (query.isValid()
 						&& resp.containsKey(arrival.direction)
-						&& (arrival.mention[0] & BusArrivalInfo.MENTION_UNKNOWN) == 0) {
+						&& (arrival.getMention(0) & BusArrivalInfo.MENTION_UNKNOWN) == 0) {
 					arrival = resp.get(arrival.direction);
 					this.updateError = false;
 				} else {
