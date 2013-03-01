@@ -4,28 +4,37 @@ import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
 public class ResponseStats {
-	private long responseTime;
-	private long parsingTime;
+	private long queryTime = System.currentTimeMillis();
+	private long responseMs;
+	private long parsingMs;
 	private BusLine busLine;
 	private BusStop busStop;
 	private boolean isValid = false;
 
-	public long getResponseTime() {
-		return responseTime;
+	public long getQueryTime() {
+		return queryTime;
 	}
 
-	public void setResponseTime(long responseTime) {
-		this.responseTime = responseTime;
+	public void setQueryTime(long queryTime) {
+		this.queryTime = queryTime;
 	}
 
-	public long getParsingTime() {
-		return parsingTime;
+	public long getResponseMs() {
+		return responseMs;
 	}
 
-	public void setParsingTime(long parsingTime) {
-		this.parsingTime = parsingTime;
+	public void setResponseMs(long responseMs) {
+		this.responseMs = responseMs;
 	}
 
+	public long getParsingMs() {
+		return parsingMs;
+	}
+
+	public void setParsingMs(long parsingMs) {
+		this.parsingMs = parsingMs;
+	}
+	
 	public BusLine getBusLine() {
 		return busLine;
 	}

@@ -1,5 +1,6 @@
 package in.animeshpathak.nextbus;
 
+import in.animeshpathak.nextbus.analytics.Analytics;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery.BusArrivalInfo;
 
@@ -18,7 +19,7 @@ import android.util.Log;
 
 public class NotificationService extends IntentService implements Runnable {
 
-	private static String LOG_TAG = "NEXTBUS";
+	private static String LOG_TAG = Constants.LOG_TAG;
 
 	private BusArrivalQuery query;
 	private BusArrivalInfo arrival;
@@ -104,7 +105,8 @@ public class NotificationService extends IntentService implements Runnable {
 		 * 
 		 * Bringing application to front from outside of the context of an
 		 * existing activity (e.g., from a Notification).
-		 * https://groups.google.com/forum/?fromgroups=#!topic/android-developers/DibTfwnfZ-s
+		 * https://groups.google.com
+		 * /forum/?fromgroups=#!topic/android-developers/DibTfwnfZ-s
 		 * 
 		 * Basically acting as the default application launcher. This avoids the
 		 * duplication of activities.
@@ -142,8 +144,9 @@ public class NotificationService extends IntentService implements Runnable {
 				publishNotification();
 
 				try {
-					if((arrival.getMention(0) & BusArrivalInfo.MENTION_UNKNOWN) == 0)
-						Thread.sleep(sleepMsFunction(arrival.getMillis(0)));
+					if ((arrival.getMention(0) & BusArrivalInfo.MENTION_UNKNOWN) == 0)
+						Thread.sleep(refreshFrequencyMillis(arrival
+								.getMillis(0)));
 					else
 						Thread.sleep(60000);
 				} catch (InterruptedException e) {
@@ -154,7 +157,7 @@ public class NotificationService extends IntentService implements Runnable {
 					break;
 				}
 
-				query.postQuery();
+				Analytics.getInstance().notifServiceQuery(query.postQuery());
 				Map<String, BusArrivalInfo> resp = query.getNextArrivals();
 				if (query.isValid()
 						&& resp.containsKey(arrival.direction)
@@ -179,6 +182,7 @@ public class NotificationService extends IntentService implements Runnable {
 		mNotifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotifManager.cancel(lsd.hashCode());
 		this.isRunning = false;
+		Analytics.getInstance().onPush();
 	}
 
 	public static void putQuery(String lsd, BusArrivalQuery qu) {
@@ -188,16 +192,22 @@ public class NotificationService extends IntentService implements Runnable {
 	public static boolean notifExists(String lsd) {
 		return notifications.containsKey(lsd);
 	}
-	
+
 	/**
-	 * Return how many ms to sleep depending on next arrival.
-	 * This allows to refresh frequently when there is little time left until arrival,
-	 * while saving battery if the bus will arrive much later.
+	 * Return how many ms to sleep depending on next arrival. This allows to
+	 * refresh frequently when there is little time left until arrival, while
+	 * saving battery if the bus will arrive much later.
+	 * 
 	 * @param msUntilArrival
 	 * @return
 	 */
-	public static int sleepMsFunction(int msUntilArrival){
-		System.err.println("To sleep: " + (msUntilArrival * 6 / 60 / 1000));
-		return msUntilArrival * 6 / 60;
+	public static int refreshFrequencyMillis(int msUntilArrival) {
+		if (msUntilArrival < 3 * 60 * 1000) {
+			return 30 * 1000; // 30s
+		} else if (msUntilArrival < 15 * 60 * 1000) {
+			return 60 * 1000; // 1min
+		} else {
+			return 5 * 60 * 1000; // 5min
+		}
 	}
 }

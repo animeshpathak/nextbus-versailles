@@ -21,4 +21,6 @@
     <string name="select_email_app">Sélectionnez votre application de messagerie préférée.</string>
     <string name="email_hello">Bonjour,\n</string>
     <string name="wildcard_bus_line">Toutes les lignes</string>
+    <string name="versioninfo_asset">versioninfo_fr.txt</string>
+    <string name="versioninfo_title">A propos de cette version</string>
 </resources>

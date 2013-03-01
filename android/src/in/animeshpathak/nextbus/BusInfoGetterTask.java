@@ -26,7 +26,7 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 	private final Activity mainActivity;
 	private boolean showWaitDialog = true;
 	private BusArrivalQuery query;
-	private static final String LOG_TAG = "NEXTBUS";
+	private static final String LOG_TAG = Constants.LOG_TAG;
 
 	// We only do this statically because reflection can be costly
 	private static Method executorMethod = executorMethodInit();
@@ -82,7 +82,7 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 
 	@Override
 	protected Void doInBackground(Void... params) {
-		Analytics.busArrivalQuery(query.postQuery());
+		Analytics.getInstance().busArrivalQuery(query.postQuery());
 		Log.d(LOG_TAG, "Done doing my stuff. " + "\nGot response: "
 				+ "Sending message for dismissing dialog now.");
 		return null;
@@ -111,6 +111,8 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 						+ ": "
 						+ DateFormat.getDateTimeInstance(DateFormat.SHORT,
 								DateFormat.SHORT).format(new Date()));
+
+				itemView.invalidate();
 			}
 		} catch (IllegalArgumentException e) {
 			// If we try to dismiss a a dialog that was not created.

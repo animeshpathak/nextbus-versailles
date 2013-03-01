@@ -1,5 +1,6 @@
 package in.animeshpathak.nextbus.timetable;
 
+import in.animeshpathak.nextbus.Constants;
 import in.animeshpathak.nextbus.NotificationService;
 import in.animeshpathak.nextbus.R;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
@@ -10,6 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 
 import android.content.Context;
 import android.content.Intent;
@@ -209,62 +216,19 @@ public abstract class BusArrivalQuery {
 		return builder.append(styled);
 	}
 
-	/**
-	 * Thanks to Lorne Laliberte
-	 * http://codereview.stackexchange.com/questions/3099
-	 * /android-remove-useless-whitespace-from-styled-string
-	 * 
-	 * @param source
-	 * @return
-	 */
-	public static CharSequence removeExcessBlankLines(CharSequence source) {
-
-		if (source == null)
-			return "";
-
-		int newlineStart = -1;
-		int nbspStart = -1;
-		int consecutiveNewlines = 0;
-		SpannableStringBuilder ssb = new SpannableStringBuilder(source);
-		for (int i = 0; i < ssb.length(); ++i) {
-			final char c = ssb.charAt(i);
-			if (c == '\n') {
-				if (consecutiveNewlines == 0)
-					newlineStart = i;
-
-				++consecutiveNewlines;
-				nbspStart = -1;
-			} else if (c == '\u00A0') {
-				if (nbspStart == -1)
-					nbspStart = i;
-			} else if (consecutiveNewlines > 0) {
-
-				// note: also removes lines containing only whitespace,
-				// or nbsp; except at the beginning of a line
-				if (!Character.isWhitespace(c) && c != '\u00A0') {
-
-					// we've reached the end
-					if (consecutiveNewlines > 2) {
-						// replace the many \n with one
-						ssb.replace(newlineStart,
-								nbspStart > newlineStart ? nbspStart : i, "\n");
-						i -= i - newlineStart;
-					}
-
-					consecutiveNewlines = 0;
-					nbspStart = -1;
-				}
-			}
-		}
-
-		return ssb;
-	}
-
 	public BusLine getBusLine() {
 		return busLine;
 	}
 
 	public BusStop getBusStop() {
 		return busStop;
+	}
+	
+	protected HttpClient createHttpClient(){
+		final HttpParams httpParams = new BasicHttpParams();
+	    HttpConnectionParams.setConnectionTimeout(httpParams, Constants.HTTP_TIMEOUT_MILLIS);
+	    HttpConnectionParams.setSoTimeout(httpParams, Constants.HTTP_TIMEOUT_MILLIS);
+		HttpClient httpclient = new DefaultHttpClient(httpParams);
+		return httpclient;
 	}
 }

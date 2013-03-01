@@ -1,0 +1,14 @@
+Cher usager,
+
+Merci d'utiliser notre application Next Bus Versailles, dont nous célébrons le tout premier anniversaire.
+
+Nous profitons de l'occasion pour vous annoncer l'ajout d'une toute nouvelle fonctionnalité qui, nous l'espérons, vous sera utile.
+Désormais, en laissant votre doigt appuyé sur un horaire d'arrivée, celui-ci apparaîtra alors dans la barre de notification de votre téléphone. 
+Ainsi, vous pourrez connaître le temps qui vous sépare de votre prochain bus, sans même avoir à ouvrir l'application !
+
+Attention toutefois à ne pas oublier de retirer la notification lorsque vous n'en aurez plus besoin. En effet, celle-ci est mise à jour régulièrement et pourrait consommer inutilement l'énergie de votre téléphone.
+
+Next Bus Versailles est une application gratuite et open source (GNU GPLv3). Si le code vous intéresse, n'hésitez pas à visiter
+http://code.google.com/p/nextbus-versailles/.
+
+Cette application est distribuée telle quelle, sans garanties ou conditions d'aucune sortes.
