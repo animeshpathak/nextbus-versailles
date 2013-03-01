@@ -6,12 +6,13 @@
 
     <uses-sdk
         android:minSdkVersion="4"
-        android:targetSdkVersion="16" />
+        android:targetSdkVersion="17" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:allowBackup="true"
         android:icon="@drawable/bus_icon_newer"
         android:label="@string/app_name" >
         <activity
@@ -26,6 +27,11 @@
 
         <service
             android:name="in.animeshpathak.nextbus.NotificationService"
+            android:enabled="true"
+            android:exported="false" />
+        
+        <service
+            android:name="in.animeshpathak.nextbus.analytics.AnalyticsService"
             android:enabled="true"
             android:exported="false" />
 

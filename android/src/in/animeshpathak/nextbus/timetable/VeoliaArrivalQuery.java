@@ -1,5 +1,6 @@
 package in.animeshpathak.nextbus.timetable;
 
+import in.animeshpathak.nextbus.Constants;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
@@ -12,7 +13,6 @@ import java.util.Map;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,7 +25,7 @@ import com.google.code.regexp.NamedPattern;
 
 public class VeoliaArrivalQuery extends BusArrivalQuery {
 
-	private static String LOG_TAG = "NEXTBUS_VeoliaArrivalQuery";
+	private static String LOG_TAG = Constants.LOG_TAG;
 	private static String VEOLIA_SERVICE_URI = "http://www.idf.veoliatransdev.com";
 
 	private CharSequence fallbackResult;
@@ -156,11 +156,9 @@ public class VeoliaArrivalQuery extends BusArrivalQuery {
 	// Thanks to http://www.androidsnippets.org/snippets/36/
 	private byte[] getBusTimings(String dirStopCode) {
 		// Create a new HttpClient and Get Header
-		HttpClient httpclient = new DefaultHttpClient();
+		HttpClient httpclient = createHttpClient();
 		HttpGet httppost = new HttpGet(VEOLIA_SERVICE_URI + "/horaire-arret-"
 				+ busLineCode + "-" + dirStopCode);
-
-		String errorMessage = "";
 
 		try {
 			Log.d(LOG_TAG, "starting POST request now");
@@ -205,7 +203,7 @@ public class VeoliaArrivalQuery extends BusArrivalQuery {
 		ResponseStats stats = new ResponseStats();
 		stats.setBusLine(this.busLine);
 		stats.setBusStop(this.busStop);
-		stats.setResponseTime(System.currentTimeMillis() - initTime);
+		stats.setResponseMs(System.currentTimeMillis() - initTime);
 
 		if (responseData.size() <= 0) {
 			this.valid = false;
@@ -219,8 +217,8 @@ public class VeoliaArrivalQuery extends BusArrivalQuery {
 
 		this.queryResult = map;
 		this.valid = (map != null && map.size() > 0);
-		stats.setParsingTime(System.currentTimeMillis() - initTime
-				- stats.getResponseTime());
+		stats.setParsingMs(System.currentTimeMillis() - initTime
+				- stats.getResponseMs());
 		stats.setValid(this.valid);
 		return stats;
 	}

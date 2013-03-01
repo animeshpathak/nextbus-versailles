@@ -1,5 +1,6 @@
 package in.animeshpathak.nextbus.timetable;
 
+import in.animeshpathak.nextbus.Constants;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
@@ -10,7 +11,6 @@ import java.util.Map;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,7 +23,7 @@ import com.google.code.regexp.NamedPattern;
 
 public class RatpArrivalQuery extends BusArrivalQuery {
 
-	private static String LOG_TAG = "NEXTBUS_RatpArrivalQuery";
+	private static String LOG_TAG = Constants.LOG_TAG;
 	private String RATP_SERVICE_URI = "http://www.ratp.fr/horaires/fr/ratp/bus/prochains_passages/PP";
 
 	private CharSequence fallbackResult;
@@ -97,7 +97,7 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 		for (int i = 0; i < tr.size(); i++) {
 			int mention = 0;
 			int arrivalMillis = 0;
-			
+
 			Elements td = tr.get(i).getElementsByTag("td");
 			if (td == null || td.size() < 2)
 				continue;
@@ -123,7 +123,7 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 			} else {
 				mention |= BusArrivalInfo.MENTION_UNKNOWN;
 			}
-			
+
 			binfo.addArrival(arrivalMillis, mention);
 		}
 		map.put(binfo.direction, binfo);
@@ -148,7 +148,7 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 	// Thanks to http://www.androidsnippets.org/snippets/36/
 	private byte[] getBusTimings(String suffix) {
 		// Create a new HttpClient and Get Header
-		HttpClient httpclient = new DefaultHttpClient();
+		HttpClient httpclient = createHttpClient();
 		HttpGet httppost = new HttpGet(RATP_SERVICE_URI + "/" + busLineCode
 				+ "/" + busStop.getCode() + "/" + suffix);
 
@@ -179,7 +179,7 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 		ResponseStats stats = new ResponseStats();
 		stats.setBusLine(this.busLine);
 		stats.setBusStop(this.busStop);
-		stats.setResponseTime(System.currentTimeMillis() - initTime);
+		stats.setResponseMs(System.currentTimeMillis() - initTime);
 
 		if (dataDirectionA == null || dataDirectionR == null) {
 			this.valid = false;
@@ -191,8 +191,8 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 
 		this.queryResult = map;
 		this.valid = (map != null && map.size() > 0);
-		stats.setParsingTime(System.currentTimeMillis() - initTime
-				- stats.getResponseTime());
+		stats.setParsingMs(System.currentTimeMillis() - initTime
+				- stats.getResponseMs());
 		stats.setValid(this.valid);
 		return stats;
 	}

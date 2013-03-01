@@ -1,5 +1,6 @@
 package in.animeshpathak.nextbus.timetable;
 
+import in.animeshpathak.nextbus.Constants;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
@@ -20,7 +21,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -40,7 +40,7 @@ import com.google.code.regexp.NamedPattern;
 
 public class PhebusArrivalQuery extends BusArrivalQuery {
 
-	private static String LOG_TAG = "NEXTBUS_PhebusArrivalQuery";
+	private static String LOG_TAG = Constants.LOG_TAG;
 	private static String PHEBUS_SERVICE_URI = "http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/code_temps_reel.php";
 
 	private CharSequence fallbackResult;
@@ -175,7 +175,7 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 	// Thanks to http://www.androidsnippets.org/snippets/36/
 	private byte[] getBusTimingsData() {
 		// Create a new HttpClient and Post Header
-		HttpClient httpclient = new DefaultHttpClient();
+		HttpClient httpclient = createHttpClient();
 		HttpPost httppost = new HttpPost(PHEBUS_SERVICE_URI);
 
 		try {
@@ -214,7 +214,7 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 		ResponseStats stats = new ResponseStats();
 		stats.setBusLine(this.busLine);
 		stats.setBusStop(this.busStop);
-		stats.setResponseTime(System.currentTimeMillis() - initTime);
+		stats.setResponseMs(System.currentTimeMillis() - initTime);
 
 		if (serverResponse == null) {
 			this.valid = false;
@@ -240,8 +240,8 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 					});
 		}
 
-		stats.setParsingTime(System.currentTimeMillis() - initTime
-				- stats.getResponseTime());
+		stats.setParsingMs(System.currentTimeMillis() - initTime
+				- stats.getResponseMs());
 		stats.setValid(this.valid);
 		return stats;
 	}

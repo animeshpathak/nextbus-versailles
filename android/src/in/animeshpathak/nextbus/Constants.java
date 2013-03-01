@@ -17,4 +17,6 @@ public class Constants {
 	public static final String FEEDBACK_EMAIL_SUBJECT = "[nextbus-versailles] Feedback";
 
 	public static final String BUSLINES_PROPERTIES = "buslines.properties";
+
+	public static final int HTTP_TIMEOUT_MILLIS = 30000;
 }

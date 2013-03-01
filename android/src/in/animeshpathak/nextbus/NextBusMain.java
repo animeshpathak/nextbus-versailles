@@ -16,6 +16,7 @@
 
 package in.animeshpathak.nextbus;
 
+import in.animeshpathak.nextbus.analytics.Analytics;
 import in.animeshpathak.nextbus.favorites.Favorite;
 import in.animeshpathak.nextbus.favorites.FavoriteDialog;
 import in.animeshpathak.nextbus.favorites.FavoriteDialog.OnFavoriteSelectedListener;
@@ -25,7 +26,10 @@ import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusNetwork;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +42,15 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.method.LinkMovementMethod;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -52,10 +62,12 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 public class NextBusMain extends Activity {
-	private static String LOG_TAG = "NEXTBUS";
+	private static String LOG_TAG = Constants.LOG_TAG;
 
 	// To get new bus-lines use (e.g.): curl
 	// http://www.phebus.tm.fr/sites/all/themes/mine/phebus/itineraire/AppelArret.php
@@ -241,6 +253,22 @@ public class NextBusMain extends Activity {
 
 		BusStop bs = lineStops.get(selectedStopID);
 		updateSpinners(bl, bs);
+
+		// Show notification on the first run
+		if (!prefs.getBoolean(getString(R.string.version_name), false)) {
+			try {
+				SharedPreferences.Editor editor = prefs.edit();
+				editor.putBoolean(getString(R.string.version_name), true);
+				showVersionInfoDialog();
+				editor.commit();
+			} catch (UnsupportedEncodingException e) {
+				Log.e(LOG_TAG,
+						"onResume() problem in versioninfo file encoding.", e);
+			} catch (IOException e) {
+				Log.e(LOG_TAG,
+						"onResume() problem in versioninfo file encoding.", e);
+			}
+		}
 	}
 
 	@Override
@@ -281,7 +309,7 @@ public class NextBusMain extends Activity {
 			} else {
 				BusArrivalQuery query = BusArrivalQueryFactory.getInstance(
 						selectedLine, selectedStop);
-				new BusInfoGetterTask(this, false, query).execute();
+				new BusInfoGetterTask(this, false, query).execute(taskExecutor);
 			}
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
@@ -344,5 +372,60 @@ public class NextBusMain extends Activity {
 		default:
 			return super.onOptionsItemSelected(item);
 		}
+	}
+
+	/**
+	 * Creates the Application Info dialog with clickable links.
+	 * 
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
+	private void showVersionInfoDialog() throws UnsupportedEncodingException,
+			IOException {
+		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+		alertDialog.setTitle(getString(R.string.app_name) + " "
+				+ getString(R.string.version_name));
+
+		AssetManager assetManager = getResources().getAssets();
+		String versionInfoFile = getString(R.string.versioninfo_asset);
+		InputStreamReader reader = new InputStreamReader(
+				assetManager.open(versionInfoFile), "UTF-8");
+		BufferedReader br = new BufferedReader(reader);
+		StringBuffer sbuf = new StringBuffer();
+		String line;
+		while ((line = br.readLine()) != null) {
+			sbuf.append(line);
+			sbuf.append("\r\n");
+		}
+
+		final ScrollView scroll = new ScrollView(this);
+		final TextView message = new TextView(this);
+		final SpannableString sWlinks = new SpannableString(sbuf.toString());
+		Linkify.addLinks(sWlinks, Linkify.WEB_URLS);
+		message.setText(sWlinks);
+		message.setMovementMethod(LinkMovementMethod.getInstance());
+		message.setPadding(15, 15, 15, 15);
+		scroll.addView(message);
+		alertDialog.setView(scroll);
+		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok",
+				new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						// nothing to do, just dismiss dialog
+					}
+				});
+		alertDialog.show();
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		Analytics.getInstance().setContext(this.getApplicationContext());
+	}
+
+	@Override
+	public void onStop() {
+		super.onStop();
+		Analytics.getInstance().onPush();
 	}
 }
