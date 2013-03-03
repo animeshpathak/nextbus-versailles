@@ -1,15 +1,14 @@
 Dear user,
 
-Thank you for using Next Bus Versailles.
-With this update we celebrate the 1st anniversary of the Application.
+Thank you for using Next Bus Versailles. With this update we celebrate the 1st anniversary of the application!
 
-We also want to let you know about a great new feature which we added.
-You will notice that by long-tapping on a bus-arrival result, a notification will appear in the Notification Bar.
-For your comfort, this notification will constantly update even when the application is not visible.
-So now, you check on the status of your bus without opening the application. 
-Please don't forget to dismiss the notification when you do not need it anymore, since constant updating will drain your device's battery.
+We also want to let you know about a great new feature which we added. Now, by long-pressing on a bus-arrival result, a notification will appear in the notification bar. This notification will constantly update even when the application is not visible, so you can easily see up-to-date information about your bus, without the need to open the application. 
 
-Next Bus Versailles is a free, open source application (GNU GPLv3): 
-http://code.google.com/p/nextbus-versailles/
+Please don't forget to dismiss the notification when you do not need it anymore (e.g., once you have caught the bus), since constant updating will drain your device's battery.
+
+If you like this app, please tell your friends about it. Also, we appreciate your ratings and feedback on the Google Play Store :).
+
+Next Bus Versailles is a free, open source application (GNU GPLv3): http://code.google.com/p/nextbus-versailles/
 
 This application is distributed on an "AS IS" BASIS, ** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
