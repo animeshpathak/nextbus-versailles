@@ -19,9 +19,9 @@ import android.widget.TextView;
 public class AboutActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		SettingsActivity.setTheme(this);
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.about);
-
 		try {
 			TextView versionInfoView = (TextView) findViewById(R.id.versionInfoText);
 			AssetManager assetManager = getResources().getAssets();
@@ -40,5 +40,4 @@ public class AboutActivity extends Activity {
 			Log.e(Constants.LOG_TAG, e.getMessage(), e);
 		}
 	}
-
 }

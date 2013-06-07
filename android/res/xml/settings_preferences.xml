@@ -1,0 +1,41 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    
+    
+    <PreferenceCategory 
+        android:title="@string/pref_header_notif_sync" 
+        android:key="header_notif_sync">
+	    <ListPreference
+	        android:defaultValue="-1"
+	        android:entries="@array/pref_sync_frequency_titles"
+	        android:entryValues="@array/pref_sync_frequency_values"
+	        android:key="notif_frequency_list"
+	        android:negativeButtonText="@null"
+	        android:positiveButtonText="@null"
+	        android:title="@string/pref_title_notif_sync_frequency" 
+	        android:summary="@string/pref_summary_notif_sync_frequency"/>
+    </PreferenceCategory>
+    
+    <PreferenceCategory 
+        android:title="@string/pref_header_analytics"
+        android:key="header_analytics">
+	    <CheckBoxPreference
+	        android:defaultValue="true"
+	        android:key="analytics_checkbox"
+	        android:summary="@string/pref_summary_enable_analytics"
+	        android:title="@string/pref_title_enable_analytics" />
+    </PreferenceCategory>
+    
+    <!-- PreferenceCategory 
+        android:title="@string/pref_header_ui" 
+        android:key="header_ui">
+	    <ListPreference
+	        android:defaultValue="Default"
+	        android:entries="@array/pref_ui_theme_titles"
+	        android:entryValues="@array/pref_ui_theme_values"
+	        android:key="notif_ui_theme_list"
+	        android:negativeButtonText="@null"
+	        android:positiveButtonText="@null"
+	        android:title="@string/pref_title_ui_theme" 
+	        android:summary="@string/pref_summary_ui_theme"/>
+    </PreferenceCategory-->
+</PreferenceScreen>
