@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -152,25 +150,14 @@ public class VeoliaArrivalQuery extends BusArrivalQuery {
 		return queryResult;
 	}
 
-	// This executes a POST and gets the actual info from the website
-	// Thanks to http://www.androidsnippets.org/snippets/36/
 	private byte[] getBusTimings(String dirStopCode) {
-		// Create a new HttpClient and Get Header
-		HttpClient httpclient = createHttpClient();
-		HttpGet httppost = new HttpGet(VEOLIA_SERVICE_URI + "/horaire-arret-"
-				+ busLineCode + "-" + dirStopCode);
-
 		try {
-			Log.d(LOG_TAG, "starting POST request now");
-			// Execute HTTP Post Request
-			HttpResponse response = httpclient.execute(httppost);
-			Log.d(LOG_TAG, "response received");
-
+			String uri = VEOLIA_SERVICE_URI + "/horaire-arret-" + busLineCode
+					+ "-" + dirStopCode;
+			HttpResponse response = doHttpGet(uri);
 			ByteArrayOutputStream myBaos = new ByteArrayOutputStream();
-
 			response.getEntity().writeTo(myBaos);
 			return myBaos.toByteArray();
-
 		} catch (Exception e) {
 			Log.e(LOG_TAG, "An error (\"" + e.getMessage()
 					+ "\") happenned in the query.", e);
