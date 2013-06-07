@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -144,22 +142,12 @@ public class RatpArrivalQuery extends BusArrivalQuery {
 		return queryResult;
 	}
 
-	// This executes a POST and gets the actual info from the website
-	// Thanks to http://www.androidsnippets.org/snippets/36/
 	private byte[] getBusTimings(String suffix) {
-		// Create a new HttpClient and Get Header
-		HttpClient httpclient = createHttpClient();
-		HttpGet httppost = new HttpGet(RATP_SERVICE_URI + "/" + busLineCode
-				+ "/" + busStop.getCode() + "/" + suffix);
-
 		try {
-			Log.d(LOG_TAG, "starting POST request now");
-			// Execute HTTP Post Request
-			HttpResponse response = httpclient.execute(httppost);
-			Log.d(LOG_TAG, "response received");
-
+			String uri = RATP_SERVICE_URI + "/" + busLineCode + "/"
+					+ busStop.getCode() + "/" + suffix;
+			HttpResponse response = doHttpGet(uri);
 			ByteArrayOutputStream myBaos = new ByteArrayOutputStream();
-
 			response.getEntity().writeTo(myBaos);
 			return myBaos.toByteArray();
 		} catch (Exception e) {

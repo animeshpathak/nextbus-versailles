@@ -1,128 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical" >
+            android:id="@+id/main_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:orientation="vertical" 
+            android:gravity="center">
 
-    <LinearLayout
-        android:id="@+id/line_spinner_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
+            <RelativeLayout
+                android:id="@+id/top_spinner_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" 
+                android:layout_alignParentTop="true"
+                android:gravity="center">
 
-        <TextView
-            android:layout_width="0pt"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center|center_vertical"
-            android:text="@string/line_info" />
+                <Spinner
+                    android:id="@+id/line_spinner"
+                    android:layout_width="115dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentLeft="true"
+                    android:prompt="@string/line_spinner_prompt" />
 
-        <Spinner
-            android:id="@+id/line_spinner"
-            android:layout_width="0pt"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:prompt="@string/line_spinner_prompt" >
+                <Spinner
+                    android:id="@+id/stop_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_toLeftOf="@+id/update_button"
+                    android:layout_toRightOf="@+id/line_spinner"
+                    android:prompt="@string/stop_spinner_prompt" />
 
-            <!-- Preview: listitem=@android:layout/simple_spinner_dropdown_item -->
-        </Spinner>
-    </LinearLayout>
+                <ImageButton
+                    android:id="@+id/update_button"
+                    android:layout_width="48dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_height="48dp"
+                    android:layout_margin="0dp"
+                    android:src="@drawable/refresh_selector"
+                    android:background="@android:color/transparent"
+                    android:gravity="right"/>
+            </RelativeLayout>
 
-    <LinearLayout
-        android:id="@+id/stop_spinner_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/line_spinner_layout"
-        android:orientation="horizontal" >
-
-        <TextView
-            android:layout_width="0pt"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center|center_vertical"
-            android:text="@string/stop_name" />
-
-        <Spinner
-            android:id="@+id/stop_spinner"
-            android:layout_width="0pt"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:prompt="@string/stop_spinner_prompt" >
-
-            <!-- Preview: listitem=@android:layout/simple_spinner_dropdown_item -->
-        </Spinner>
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/update_button"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/stop_spinner_layout"
-        android:text="@string/update" />
-
-    <ScrollView
-        android:id="@+id/content_spinner"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/bottom_buttons_layout"
-        android:layout_below="@+id/update_button" >
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" >
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="1dp"
-                android:background="#999" >
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/bus_section"
+            <ScrollView
+                android:id="@+id/content_spinner"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingBottom="60dp" >
-            </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
+                android:layout_above="@+id/bottom_buttons_layout"
+                android:layout_below="@+id/top_spinner_bar" >
 
-    <RelativeLayout
-        android:id="@+id/bottom_buttons_layout"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true" >
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" >
 
-        <Button
-            android:id="@+id/favorites_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:layout_alignParentBottom="true"
-            android:text="@string/favoritebutton" />
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="1dp"
+                        android:background="#666" >
+                    </LinearLayout>
 
-        <TextView
-            android:id="@+id/version_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            android:text="@string/version_name"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
+                    <LinearLayout
+                        android:id="@+id/bus_section"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingBottom="60dp" >
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
 
-        <Button
-            android:id="@+id/feedback_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:text="@string/feedbackbutton" />
-    </RelativeLayout>
+            <RelativeLayout
+                android:id="@+id/bottom_buttons_layout"
+                android:layout_width="fill_parent"
+                android:layout_height="50dp"
+                android:layout_alignParentBottom="true">
 
-</RelativeLayout>
+                <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="1dp"
+                        android:background="#666"
+                        android:layout_alignParentTop="true" >
+                    </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/favorites_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/favorites_selector"
+                    android:background="@android:color/transparent"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp" />
+
+                <ImageButton
+                    android:id="@+id/feedback_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_toRightOf="@+id/favorites_button"
+                    android:src="@drawable/feedback_selector"
+                    android:background="@android:color/transparent"
+                    android:layout_marginLeft="30dp"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp" />
+
+                <TextView
+                    android:id="@+id/version_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp"
+                    android:text="@string/version_name"
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                <ImageButton
+                    android:id="@+id/phebusinfo_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_toLeftOf="@+id/version_text"
+                    android:src="@drawable/info_selector"
+                    android:background="@android:color/transparent"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp" />
+
+            </RelativeLayout>
+        </RelativeLayout>

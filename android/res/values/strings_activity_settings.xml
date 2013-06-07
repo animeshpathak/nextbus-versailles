@@ -1,0 +1,37 @@
+<resources>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+    <string name="pref_header_ui">UI</string>
+    <string name="pref_title_ui_theme">Color Theme</string>
+    <string name="pref_summary_ui_theme">Default</string>
+    <string-array name="pref_ui_theme_titles"/>
+    <string-array name="pref_ui_theme_values"/>
+    
+    <string name="pref_header_notif_sync">Notifications</string>
+    <string name="pref_title_notif_sync_frequency">Update frequency</string>
+    <string name="pref_summary_notif_sync_frequency">Auto</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>30 sec</item>
+        <item>1 min</item>
+        <item>2 min</item>
+        <item>3 min</item>
+        <item>5 min</item>
+        <item>15 min</item>
+        <item>Auto</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>30000</item>
+        <item>60000</item>
+        <item>120000</item>
+        <item>180000</item>
+        <item>300000</item>
+        <item>900000</item>
+        <item>-1</item>
+    </string-array>
+    
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_analytics">Anonymous analytics</string>
+    <string name="pref_title_enable_analytics">Eanble analytics</string>
+    <string name="pref_summary_enable_analytics">Please see our Privacy Policy for more information.</string>
+</resources>

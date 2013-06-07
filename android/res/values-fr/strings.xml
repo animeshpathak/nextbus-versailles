@@ -5,8 +5,8 @@
     <string name="feedbackbutton">Réaction</string>
     <string name="favoritebutton">Favoris</string>
     <string name="addtofavbutton">Ajoutez cet arrêt</string>
-	<string name="line_info">Ligne:</string>
-	<string name="stop_name">Arrêt:</string>
+	<string name="line_info">ligne</string>
+	<string name="stop_name">arrêt</string>
 	<string name="stop_spinner_prompt">Choisir un arrêt</string>
     <string name="line_spinner_prompt">Choisir un ligne</string>
 	<string name="bus_times"></string>
