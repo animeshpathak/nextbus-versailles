@@ -14,6 +14,8 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.text.SpannableStringBuilder;
 import android.util.Log;
 
@@ -30,6 +32,7 @@ public class NotificationService extends IntentService implements Runnable {
 	// LineStopDirection
 	private String lsd;
 	private boolean updateError = false;
+	private int updateFrequency = -1;
 
 	private static int[] timeIcons = { R.drawable.bus_00, R.drawable.bus_01,
 			R.drawable.bus_02, R.drawable.bus_03, R.drawable.bus_04,
@@ -46,6 +49,16 @@ public class NotificationService extends IntentService implements Runnable {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
+		SharedPreferences sharedPrefs = PreferenceManager
+				.getDefaultSharedPreferences(this.getApplicationContext());
+		String updateFrequencyStr = sharedPrefs.getString(
+				"notif_frequency_list", "-1");
+		try {
+			updateFrequency = Integer.parseInt(updateFrequencyStr);
+		} catch (NumberFormatException nfe) {
+			Log.e(LOG_TAG, "" + nfe.getMessage(), nfe);
+		}
+
 		if (!intent.getBooleanExtra("deletekey", false)
 				&& intent.hasExtra("LineStopDirection")
 				&& intent.hasExtra("direction")) {
@@ -73,6 +86,7 @@ public class NotificationService extends IntentService implements Runnable {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private void publishNotification() {
 		NotificationManager mNotifManager;
 		mNotifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -201,7 +215,10 @@ public class NotificationService extends IntentService implements Runnable {
 	 * @param msUntilArrival
 	 * @return
 	 */
-	public static int refreshFrequencyMillis(int msUntilArrival) {
+	public int refreshFrequencyMillis(int msUntilArrival) {
+		if (updateFrequency >= 0)
+			return updateFrequency;
+
 		if (msUntilArrival < 3 * 60 * 1000) {
 			return 30 * 1000; // 30s
 		} else if (msUntilArrival < 15 * 60 * 1000) {

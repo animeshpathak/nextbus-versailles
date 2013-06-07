@@ -6,13 +6,19 @@ import in.animeshpathak.nextbus.R;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
@@ -25,6 +31,7 @@ import android.text.SpannableStringBuilder;
 import android.text.format.DateUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.TextAppearanceSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnLongClickListener;
@@ -33,6 +40,7 @@ import android.widget.TextView;
 
 public abstract class BusArrivalQuery {
 
+	private static String LOG_TAG = Constants.LOG_TAG;
 	private View contentView = null;
 
 	protected BusLine busLine;
@@ -224,11 +232,32 @@ public abstract class BusArrivalQuery {
 		return busStop;
 	}
 	
-	protected HttpClient createHttpClient(){
+	public static HttpClient createHttpClient(){
 		final HttpParams httpParams = new BasicHttpParams();
 	    HttpConnectionParams.setConnectionTimeout(httpParams, Constants.HTTP_TIMEOUT_MILLIS);
 	    HttpConnectionParams.setSoTimeout(httpParams, Constants.HTTP_TIMEOUT_MILLIS);
 		HttpClient httpclient = new DefaultHttpClient(httpParams);
 		return httpclient;
+	}
+	
+	// This executes a POST and gets the actual info from the website
+	// Thanks to http://www.androidsnippets.org/snippets/36/
+	protected HttpResponse doHttpPost(String uri, List<NameValuePair> params) throws IOException{
+		HttpClient httpclient = createHttpClient();
+		HttpPost httppost = new HttpPost(uri);
+		Log.d(LOG_TAG, String.format("POST request for %s - %s", busLine, busStop));
+		httppost.setEntity(new UrlEncodedFormEntity(params));
+		HttpResponse response = httpclient.execute(httppost);
+		Log.d(LOG_TAG, String.format("Response for %s - %s", busLine, busStop));
+		return response;
+	}
+	
+	protected HttpResponse doHttpGet(String uri) throws IOException{
+		HttpClient httpclient = createHttpClient();
+		HttpGet httpget = new HttpGet(uri);
+		Log.d(LOG_TAG, String.format("GET request for %s - %s", busLine, busStop));
+		HttpResponse response = httpclient.execute(httpget);
+		Log.d(LOG_TAG, String.format("Response for %s - %s", busLine, busStop));
+		return response;
 	}
 }

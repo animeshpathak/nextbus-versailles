@@ -10,23 +10,21 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
-
-	private ProgressDialog progressDialog = null;
 	private final Activity mainActivity;
-	private boolean showWaitDialog = true;
 	private BusArrivalQuery query;
+	private int index;
 	private static final String LOG_TAG = Constants.LOG_TAG;
+	private static final int ANIMATION_MILLIS = 200;
 
 	// We only do this statically because reflection can be costly
 	private static Method executorMethod = executorMethodInit();
@@ -44,60 +42,36 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 		return null;
 	}
 
-	public BusInfoGetterTask(Activity main, boolean showWaitDialog,
-			BusArrivalQuery query) {
+	public BusInfoGetterTask(Activity main, BusArrivalQuery query, int index) {
 		this.mainActivity = main;
-		this.showWaitDialog = showWaitDialog;
 		this.query = query;
-
-		if (this.showWaitDialog) {
-			this.progressDialog = new ProgressDialog(main);
-			this.progressDialog.setMessage(main
-					.getString(R.string.getting_latest_times) + "...");
-			this.progressDialog.setCancelable(true);
-			this.progressDialog.setOnCancelListener(new OnCancelListener() {
-				@Override
-				public void onCancel(DialogInterface dialog) {
-					cancel(true);
-				}
-			});
-		}
+		this.index = index;
 	}
 
 	@Override
 	protected void onPreExecute() {
-		if (showWaitDialog)
-			progressDialog.show();
-
 		LinearLayout busTimingsScroll = (LinearLayout) mainActivity
 				.findViewById(R.id.bus_section);
-		busTimingsScroll.addView(query.getInitialView(mainActivity));
-	}
-
-	@Override
-	protected void onCancelled() {
-		if (showWaitDialog)
-			progressDialog.dismiss();
+		View contentView = query.getInitialView(mainActivity);
+		Animation a1 = new ScaleAnimation(1, 1, 0, 1, 0, 0);
+		a1.setStartOffset(index * ANIMATION_MILLIS);
+		a1.setDuration(ANIMATION_MILLIS);
+		a1.setFillAfter(true);
+		contentView.clearAnimation();
+		contentView.startAnimation(a1);
+		busTimingsScroll.addView(contentView);
 	}
 
 	@Override
 	protected Void doInBackground(Void... params) {
 		Analytics.getInstance().busArrivalQuery(query.postQuery());
-		Log.d(LOG_TAG, "Done doing my stuff. " + "\nGot response: "
-				+ "Sending message for dismissing dialog now.");
 		return null;
 	}
 
 	@Override
 	protected void onPostExecute(Void param) {
 		super.onPostExecute(param);
-
 		try {
-			if (showWaitDialog)
-				progressDialog.dismiss();
-
-			Log.d(LOG_TAG, "\nUpload Complete. The Server said...\n");
-
 			if (query != null) {
 				View itemView = query.getInflatedView(mainActivity);
 				// make progress bar invisible
@@ -127,7 +101,7 @@ public class BusInfoGetterTask extends AsyncTask<Void, Void, Void> {
 			try {
 				executorMethod.invoke(this, tpe, new Void[0]);
 			} catch (Exception e) {
-				Log.e(LOG_TAG, "" + e.getMessage());
+				Log.e(LOG_TAG, "" + e.getMessage(), e);
 				this.execute();
 			}
 		} else {

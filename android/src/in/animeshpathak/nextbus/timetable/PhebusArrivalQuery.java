@@ -18,9 +18,6 @@ import java.util.Map;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -171,30 +168,17 @@ public class PhebusArrivalQuery extends BusArrivalQuery {
 		return queryResult;
 	}
 
-	// This executes a POST and gets the actual info from the website
-	// Thanks to http://www.androidsnippets.org/snippets/36/
 	private byte[] getBusTimingsData() {
-		// Create a new HttpClient and Post Header
-		HttpClient httpclient = createHttpClient();
-		HttpPost httppost = new HttpPost(PHEBUS_SERVICE_URI);
-
 		try {
-			// Add your data
 			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-			Log.d(LOG_TAG, "Getting info for stop id " + busStop);
 			nameValuePairs.add(new BasicNameValuePair("arret", busStop
 					.getCode()));
 			nameValuePairs.add(new BasicNameValuePair("ligne", busLine
 					.getCode()));
-			httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-			Log.d(LOG_TAG, "starting POST request now");
 			// Execute HTTP Post Request
-			HttpResponse response = httpclient.execute(httppost);
-			Log.d(LOG_TAG, "response received");
-
+			HttpResponse response = doHttpPost(PHEBUS_SERVICE_URI,
+					nameValuePairs);
 			ByteArrayOutputStream myBaos = new ByteArrayOutputStream();
-
 			response.getEntity().writeTo(myBaos);
 			return myBaos.toByteArray();
 

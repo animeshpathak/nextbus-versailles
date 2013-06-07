@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="in.animeshpathak.nextbus"
-    android:versionCode="17"
+    android:versionCode="18"
     android:versionName="@string/version_name" >
 
     <uses-sdk
@@ -17,9 +17,10 @@
         <activity
             android:name="in.animeshpathak.nextbus.NextBusMain"
             android:label="@string/app_name"
-            android:screenOrientation="portrait">        
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -28,7 +29,6 @@
             android:name="in.animeshpathak.nextbus.NotificationService"
             android:enabled="true"
             android:exported="false" />
-        
         <service
             android:name="in.animeshpathak.nextbus.analytics.AnalyticsService"
             android:enabled="true"
@@ -37,6 +37,12 @@
         <activity
             android:name="in.animeshpathak.nextbus.AboutActivity"
             android:label="@string/home_activity_title"
+            android:screenOrientation="portrait" >
+        </activity>
+        
+        <activity
+            android:name="in.animeshpathak.nextbus.SettingsActivity"
+            android:label="@string/title_activity_settings"
             android:screenOrientation="portrait" >
         </activity>
     </application>

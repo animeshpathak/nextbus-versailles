@@ -20,6 +20,7 @@ import in.animeshpathak.nextbus.analytics.Analytics;
 import in.animeshpathak.nextbus.favorites.Favorite;
 import in.animeshpathak.nextbus.favorites.FavoriteDialog;
 import in.animeshpathak.nextbus.favorites.FavoriteDialog.OnFavoriteSelectedListener;
+import in.animeshpathak.nextbus.news.PhebusNewsLoader;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.BusArrivalQueryFactory;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
@@ -57,10 +58,11 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
@@ -79,6 +81,7 @@ public class NextBusMain extends Activity {
 	// UI elements
 	Spinner lineSpinner;
 	ArrayAdapter<BusLine> lineAdapter;
+
 	Spinner stopSpinner;
 	ArrayAdapter<BusStop> stopAdapter;
 
@@ -89,8 +92,9 @@ public class NextBusMain extends Activity {
 	/** Called when the activity is first started. */
 	@Override
 	public void onCreate(Bundle bundle) {
-		super.onCreate(bundle);
 		Log.d(LOG_TAG, "entering onCreate()");
+		SettingsActivity.setTheme(this);
+		super.onCreate(bundle);
 		setContentView(R.layout.main);
 
 		try {
@@ -102,7 +106,7 @@ public class NextBusMain extends Activity {
 
 		// get the button
 		// set handler to launch a processing dialog
-		Button updateButton = (Button) findViewById(R.id.update_button);
+		ImageButton updateButton = (ImageButton) findViewById(R.id.update_button);
 		updateButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -114,7 +118,7 @@ public class NextBusMain extends Activity {
 			}
 		});
 
-		Button feedbackButton = (Button) findViewById(R.id.feedback_button);
+		ImageButton feedbackButton = (ImageButton) findViewById(R.id.feedback_button);
 		feedbackButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -130,11 +134,25 @@ public class NextBusMain extends Activity {
 			}
 		});
 
+		ImageButton phebusinfoButton = (ImageButton) findViewById(R.id.phebusinfo_button);
+		phebusinfoButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				AlertDialog alertDialog = new AlertDialog.Builder(
+						NextBusMain.this).create();
+				WebView wv = new WebView(NextBusMain.this);
+				new PhebusNewsLoader(wv, NextBusMain.this).execute();
+				alertDialog.setView(wv);
+				alertDialog.show();
+			}
+		});
+
 		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
 		lineAdapter = new ArrayAdapter<BusLine>(this,
 				android.R.layout.simple_spinner_item, busNet.getLines());
 		lineAdapter
 				.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
 		lineSpinner.setAdapter(lineAdapter);
 
 		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
@@ -144,7 +162,7 @@ public class NextBusMain extends Activity {
 				.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		stopSpinner.setAdapter(stopAdapter);
 
-		Button favoriteButton = (Button) findViewById(R.id.favorites_button);
+		ImageButton favoriteButton = (ImageButton) findViewById(R.id.favorites_button);
 		favoriteButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View arg0) {
@@ -227,6 +245,7 @@ public class NextBusMain extends Activity {
 		// at this time, the UI elements have been created. Need to read
 		// It is best not to reuse references to views after pause (Android
 		// seems to create new objects)
+
 		lineSpinner = (Spinner) findViewById(R.id.line_spinner);
 		stopSpinner = (Spinner) findViewById(R.id.stop_spinner);
 		// the shared preferences, and store them in local variables.
@@ -269,6 +288,10 @@ public class NextBusMain extends Activity {
 						"onResume() problem in versioninfo file encoding.", e);
 			}
 		}
+
+		// Show red button if Phebus posted new alerts
+		new PhebusNewsLoader(null, NextBusMain.this).execute();
+
 	}
 
 	@Override
@@ -309,7 +332,7 @@ public class NextBusMain extends Activity {
 			} else {
 				BusArrivalQuery query = BusArrivalQueryFactory.getInstance(
 						selectedLine, selectedStop);
-				new BusInfoGetterTask(this, false, query).execute(taskExecutor);
+				new BusInfoGetterTask(this, query, 0).execute(taskExecutor);
 			}
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
@@ -347,10 +370,11 @@ public class NextBusMain extends Activity {
 			}
 		}
 
+		int idx = 0;
 		for (Entry<BusLine, BusStop> qLine : linesToSearch.entrySet()) {
 			BusArrivalQuery query = BusArrivalQueryFactory.getInstance(
 					qLine.getKey(), qLine.getValue());
-			BusInfoGetterTask big = new BusInfoGetterTask(this, false, query);
+			BusInfoGetterTask big = new BusInfoGetterTask(this, query, idx++);
 			big.execute(taskExecutor);
 		}
 	}
@@ -368,6 +392,9 @@ public class NextBusMain extends Activity {
 		switch (item.getItemId()) {
 		case R.id.about_menu:
 			startActivity(new Intent(NextBusMain.this, AboutActivity.class));
+			return true;
+		case R.id.settings_menu:
+			startActivity(new Intent(NextBusMain.this, SettingsActivity.class));
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
