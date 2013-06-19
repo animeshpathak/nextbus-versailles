@@ -12,3 +12,9 @@ Next Bus Versailles is a free, open source application (GNU GPLv3): http://code.
 
 This application is distributed on an "AS IS" BASIS, ** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
+------PRIVACY POLICY------
+In an effort to continuously improve our application, statistics about the use of lines and bus stops will be collected from version 1.4. These statistics are purely *anonymous* and aim to determine which lines and the busiest stops, for purposes of quality of service.
+
+No personal information or allowing identification is recorded and the results of our statistics will be made public seamlessly.
+
+You can, at any time, disable the collection of these information by going to the application settings.
