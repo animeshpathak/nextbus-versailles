@@ -12,3 +12,10 @@ Next Bus Versailles est une application gratuite et open source (GNU GPLv3). Si 
 http://code.google.com/p/nextbus-versailles/.
 
 Cette application est distribuée telle quelle, sans garanties ou conditions d'aucune sortes.
+
+------ POLITIQUE DE CONFIDENTIALITÉ ------
+Dans un souci d'amélioration continue de notre application, des statistiques à propos de l'utilisation des lignes et des arrêts de bus seront recueillies à partir de la version 1.4. Ces statistiques sont purement *anonymes* et ont pour objectif de déterminer quelles sont les lignes et les arrêts les plus sollicités, ce à des fins de qualité de service.
+
+Aucune information personnelle, ou permettant une identification, n'est enregistrée et les résultats de nos statistiques seront rendus publics en toute transparence.
+
+Vous pouvez, à tout moment, désactiver la collecte de ces informations en vous rendant dans les paramètres de l'application.
