@@ -1,5 +1,6 @@
 package in.animeshpathak.nextbus.analytics;
 
+import in.animeshpathak.nextbus.ConfidentialConstants;
 import in.animeshpathak.nextbus.Constants;
 import in.animeshpathak.nextbus.R;
 import in.animeshpathak.nextbus.timetable.ResponseStats;
@@ -66,10 +67,8 @@ public class Analytics {
 		HttpPost httppost;
 
 		try {
-			String analyticsUri = context.getString(R.string.analytics_uri);
-			String aToken = context.getString(R.string.analytics_token);
-			String getUri = String.format("%s?tok=%s&z=%s", analyticsUri,
-					aToken, queryType);
+			String getUri = String.format("%s?tok=%s&z=%s", ConfidentialConstants.ANALYTICS_URI,
+					ConfidentialConstants.ANALYTICS_TOKEN, queryType);
 			httppost = new HttpPost(getUri);
 			StringBuffer strBuf = new StringBuffer();
 			long sendTime = System.currentTimeMillis();
