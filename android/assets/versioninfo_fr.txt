@@ -1,8 +1,10 @@
 Cher usager,
 
-Merci d'utiliser notre application Next Bus Versailles, dont nous célébrons le tout premier anniversaire!
+Bienvenue dans la version 1.4 de l'application Next Bus Versailles. Merci de votre fidélité.
 
-Nous profitons de l'occasion pour vous annoncer l'ajout d'une toute nouvelle fonctionnalité qui, nous l'espérons, vous sera utile. Désormais, en laissant votre doigt appuyé sur un horaire d'arrivée, celui-ci apparaitra alors dans la barre de notification de votre téléphone. Ainsi, vous pourrez connaitre le temps qui vous sépare de votre prochain bus, sans méme avoir ouvrir l'application !
+Nous profitons de cette nouvelle version pour introduire une toute nouvelle fonctionnalité. En effet, vous pouvez désormais consulter les dernières actualités du site Phébus directement dans l'application.
+
+Nous vous rappelons que vous pouvez toujours suivre en temps réel l'arrivée de votre prochain bus dans la barre de notification de votre téléphone. Pour ce faire, il vous suffit de maintenir votre doigt sur n'importe quel horaire dans l'application. Ainsi, vous pourrez connaitre le temps qui vous sépare de votre prochain bus, sans méme avoir ouvrir l'application !
 
 Attention toutefois ne pas oublier de retirer la notification lorsque vous n'en aurez plus besoin. En effet, celle-ci est mise jour régulièrement et pourrait consommer inutilement l'énergie de votre téléphone.
 

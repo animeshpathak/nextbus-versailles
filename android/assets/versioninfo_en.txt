@@ -1,8 +1,8 @@
 Dear user,
 
-Thank you for using Next Bus Versailles. With this update we celebrate the 1st anniversary of the application!
+Thank you for using Next Bus Versailles, and for the wonderful response to our 1st anniversary version of the application!
 
-We also want to let you know about a great new feature which we added. Now, by long-pressing on a bus-arrival result, a notification will appear in the notification bar. This notification will constantly update even when the application is not visible, so you can easily see up-to-date information about your bus, without the need to open the application. 
+In this version, we have added a new feature: a shortcut for easy access to notifications on the Phebus website. Also, by long-pressing on a bus-arrival result, a notification will appear in the notification bar. This notification will constantly update even when the application is not visible, so you can easily see up-to-date information about your bus, without the need to open the application. 
 
 Please don't forget to dismiss the notification when you do not need it anymore (e.g., once you have caught the bus), since constant updating will drain your device's battery.
 
