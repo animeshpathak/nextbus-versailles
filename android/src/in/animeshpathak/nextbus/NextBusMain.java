@@ -291,7 +291,7 @@ public class NextBusMain extends Activity {
 
 		// Show red button if Phebus posted new alerts
 		new PhebusNewsLoader(null, NextBusMain.this).execute();
-
+		Analytics.getInstance().setContext(this.getApplicationContext());
 	}
 
 	@Override
@@ -317,6 +317,8 @@ public class NextBusMain extends Activity {
 		editor.putInt(Constants.SELECTED_LINE, lineIndex);
 		editor.putInt(Constants.SELECTED_STOP, stopIndex);
 		editor.commit();
+		
+		Analytics.getInstance().onPush();
 		super.onPause();
 	}
 
@@ -442,17 +444,5 @@ public class NextBusMain extends Activity {
 					}
 				});
 		alertDialog.show();
-	}
-
-	@Override
-	public void onStart() {
-		super.onStart();
-		Analytics.getInstance().setContext(this.getApplicationContext());
-	}
-
-	@Override
-	public void onStop() {
-		super.onStop();
-		Analytics.getInstance().onPush();
 	}
 }

@@ -32,6 +32,6 @@
     
     <!-- Example settings for Notifications -->
     <string name="pref_header_analytics">Anonymous analytics</string>
-    <string name="pref_title_enable_analytics">Eanble analytics</string>
+    <string name="pref_title_enable_analytics">Enable analytics</string>
     <string name="pref_summary_enable_analytics">Please see our Privacy Policy for more information.</string>
 </resources>
