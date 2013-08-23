@@ -173,28 +173,6 @@ public class NotificationService extends IntentService {
 		nBuild.setSmallIcon(iconRes);
 		nBuild.setDeleteIntent(PendingIntent.getService(this, lsd.hashCode(), deleteIntent, 0));
 		mNotifManager.notify(lsd.hashCode(), nBuild.build());
-
-//		// hack to simulate an update animation
-//		for (int i = 0; i < 3; i++) {
-//			nBuild.setSmallIcon(R.drawable.bus_icon_gray);
-//			if(null != queries.get(lsd))
-//				mNotifManager.notify(lsd.hashCode(), nBuild.build());
-//			
-//			try {
-//				Thread.sleep(500);
-//			} catch (InterruptedException e) {
-//				
-//			}
-//
-//			nBuild.setSmallIcon(iconRes);
-//			if(null != queries.get(lsd))
-//				mNotifManager.notify(lsd.hashCode(), nBuild.build());
-//			
-//			try {
-//				Thread.sleep(1000);
-//			} catch (InterruptedException e) {
-//			}
-//		}
 	}
 
 	@Override
