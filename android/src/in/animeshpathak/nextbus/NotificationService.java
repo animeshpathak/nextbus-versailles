@@ -4,11 +4,14 @@ import in.animeshpathak.nextbus.analytics.Analytics;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery.BusArrivalInfo;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import android.app.AlarmManager;
 import android.app.IntentService;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ComponentName;
@@ -16,16 +19,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.text.SpannableStringBuilder;
 import android.util.Log;
 
-public class NotificationService extends IntentService implements Runnable {
+public class NotificationService extends IntentService {
 
 	private static String LOG_TAG = Constants.LOG_TAG;
+	
+	public static final String ACTION_NEW = "new-notif";
+	public static final String ACTION_UPDATE = "update-notif";
+	public static final String ACTION_DELETE = "delete-notif";
+	
+	public static final String EXTRA_DIRECTION = "extra-direction";
+	public static final String EXTRA_LINE_STOP_DIR = "extra-line-stop-direction";
+	public static final String EXTRA_WHEN_UPDATE = "extra-when-update";
 
 	private BusArrivalQuery query;
 	private BusArrivalInfo arrival;
-	private boolean isRunning;
+	private AtomicBoolean isRunning = new AtomicBoolean(false);
 	private static HashMap<String, NotificationService> notifications = new HashMap<String, NotificationService>();
 	private static HashMap<String, BusArrivalQuery> queries = new HashMap<String, BusArrivalQuery>();
 
@@ -34,12 +46,12 @@ public class NotificationService extends IntentService implements Runnable {
 	private boolean updateError = false;
 	private int updateFrequency = -1;
 
-	private static int[] timeIcons = { R.drawable.bus_00, R.drawable.bus_01,
-			R.drawable.bus_02, R.drawable.bus_03, R.drawable.bus_04,
-			R.drawable.bus_05, R.drawable.bus_06, R.drawable.bus_07,
-			R.drawable.bus_08, R.drawable.bus_09, R.drawable.bus_10,
-			R.drawable.bus_11, R.drawable.bus_12, R.drawable.bus_13,
-			R.drawable.bus_14, R.drawable.bus_15 };
+	private static int[] timeIcons = { R.drawable.bus_00_x, R.drawable.bus_01_x,
+			R.drawable.bus_02_x, R.drawable.bus_03_x, R.drawable.bus_04_x,
+			R.drawable.bus_05_x, R.drawable.bus_06_x, R.drawable.bus_07_x,
+			R.drawable.bus_08_x, R.drawable.bus_09_x, R.drawable.bus_10_x,
+			R.drawable.bus_11_x, R.drawable.bus_12_x, R.drawable.bus_13_x,
+			R.drawable.bus_14_x, R.drawable.bus_15_x };
 
 	private long when = System.currentTimeMillis();
 
@@ -59,24 +71,42 @@ public class NotificationService extends IntentService implements Runnable {
 			Log.e(LOG_TAG, "" + nfe.getMessage(), nfe);
 		}
 
-		if (!intent.getBooleanExtra("deletekey", false)
-				&& intent.hasExtra("LineStopDirection")
-				&& intent.hasExtra("direction")) {
-			this.lsd = intent.getStringExtra("LineStopDirection");
+		if (intent.getBooleanExtra(ACTION_NEW, false)) {
+			this.lsd = intent.getStringExtra(EXTRA_LINE_STOP_DIR);
 			if (lsd != null) {
 				this.query = queries.get(lsd);
 				this.arrival = query.getNextArrivals().get(
-						intent.getStringExtra("direction"));
+						intent.getStringExtra(EXTRA_DIRECTION));
 				notifications.put(lsd, this);
 				if (!query.isValid()
 						|| (arrival.getMention(0) & BusArrivalInfo.MENTION_UNKNOWN) != 0) {
 					this.updateError = true;
 				}
 
-				new Thread(this).start();
+				// initially show the notification
+				publishNotificationCompat();
+				
+				// set-up an ALARM to update the notification 
+				setNextAlarm(refreshFrequencyMillis(arrival.getMillis(0)));
 			}
-		} else {
-			String lsd = intent.getStringExtra("LineStopDirection");
+		} else if (intent.getBooleanExtra(ACTION_UPDATE, false)) {
+			this.lsd = intent.getStringExtra(EXTRA_LINE_STOP_DIR);
+			this.query = queries.get(lsd);
+			
+			if(null == query){
+				Log.w(LOG_TAG, "STOP updating: " + this.lsd);
+				NotificationService serviceToRemove = notifications.remove(lsd);
+				if (serviceToRemove != null)
+					serviceToRemove.terminate();
+				return;
+			}
+			
+			this.arrival = query.getNextArrivals().get(
+					intent.getStringExtra(EXTRA_DIRECTION));
+			this.when = intent.getLongExtra(EXTRA_WHEN_UPDATE, System.currentTimeMillis());
+			updateNotification();
+		} else if (intent.getBooleanExtra(ACTION_DELETE, false)) {
+			String lsd = intent.getStringExtra(EXTRA_LINE_STOP_DIR);
 			if (lsd != null) {
 				NotificationService serviceToRemove = notifications.remove(lsd);
 				queries.remove(lsd);
@@ -85,22 +115,22 @@ public class NotificationService extends IntentService implements Runnable {
 			}
 		}
 	}
-
-	@SuppressWarnings("deprecation")
-	private void publishNotification() {
-		NotificationManager mNotifManager;
+	
+	private void publishNotificationCompat() {
+		final NotificationManager mNotifManager;
 		mNotifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		Notification notif = new Notification();
+		final NotificationCompat.Builder nBuild = new NotificationCompat.Builder(this);
 
 		SpannableStringBuilder ssb = new SpannableStringBuilder();
 		String notifTitle;
 
+		int iconRes = R.drawable.bus_icon_newer_x;
+		
 		if (!updateError) {
-			notif.icon = R.drawable.bus_icon_newer;
 			int minutesLeft = arrival.getMillis(0) / 60000;
 			// The arrival time is less than 16 minutes
 			if (minutesLeft < 16) {
-				notif.icon = timeIcons[minutesLeft];
+				iconRes = timeIcons[minutesLeft];
 			}
 			ssb.append(query.getBusStop().getName() + " -> ");
 			ssb.append(arrival.direction);
@@ -109,7 +139,7 @@ public class NotificationService extends IntentService implements Runnable {
 					+ BusArrivalQuery.formatTimeDelta(this,
 							arrival.getMillis(0));
 		} else {
-			notif.icon = R.drawable.bus_update_error;
+			iconRes =  R.drawable.bus_update_error;
 			notifTitle = query.getBusLine().getName();
 			ssb.append(getString(R.string.bus_text_unavailable));
 		}
@@ -131,46 +161,61 @@ public class NotificationService extends IntentService implements Runnable {
 				NextBusMain.class));
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
 				notificationIntent, 0);
-		notif.contentIntent = contentIntent;
-		notif.when = this.when;
+		nBuild.setAutoCancel(false);
+		nBuild.setContentIntent(contentIntent);
+		nBuild.setWhen(this.when);
 		Intent deleteIntent = new Intent(this, NotificationService.class);
-		deleteIntent.putExtra("deletekey", true);
-		deleteIntent.putExtra("LineStopDirection", lsd);
-		notif.deleteIntent = PendingIntent.getService(this, lsd.hashCode(),
-				deleteIntent, 0);
+		deleteIntent.putExtra(ACTION_DELETE, true);
+		deleteIntent.putExtra(EXTRA_LINE_STOP_DIR, lsd);
+		nBuild.setContentTitle(notifTitle);
+		nBuild.setContentText(ssb.toString());
+		nBuild.setContentIntent(contentIntent);
+		nBuild.setSmallIcon(iconRes);
+		nBuild.setDeleteIntent(PendingIntent.getService(this, lsd.hashCode(), deleteIntent, 0));
+		mNotifManager.notify(lsd.hashCode(), nBuild.build());
 
-		notif.setLatestEventInfo(this, notifTitle, ssb.toString(),
-				contentIntent);
-		mNotifManager.notify(lsd.hashCode(), notif);
+//		// hack to simulate an update animation
+//		for (int i = 0; i < 3; i++) {
+//			nBuild.setSmallIcon(R.drawable.bus_icon_gray);
+//			if(null != queries.get(lsd))
+//				mNotifManager.notify(lsd.hashCode(), nBuild.build());
+//			
+//			try {
+//				Thread.sleep(500);
+//			} catch (InterruptedException e) {
+//				
+//			}
+//
+//			nBuild.setSmallIcon(iconRes);
+//			if(null != queries.get(lsd))
+//				mNotifManager.notify(lsd.hashCode(), nBuild.build());
+//			
+//			try {
+//				Thread.sleep(1000);
+//			} catch (InterruptedException e) {
+//			}
+//		}
 	}
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
 	}
-
-	@Override
-	public void run() {
+	
+	public void updateNotification() {
 		try {
-			Thread.currentThread().setName("NotifUpdater_" + lsd);
-			this.isRunning = true;
-			while (this.isRunning) {
-				publishNotification();
-
-				try {
-					if ((arrival.getMention(0) & BusArrivalInfo.MENTION_UNKNOWN) == 0)
-						Thread.sleep(refreshFrequencyMillis(arrival
-								.getMillis(0)));
-					else
-						Thread.sleep(60000);
-				} catch (InterruptedException e) {
-
+				Log.w(LOG_TAG, "Updating notification: " + lsd);
+			
+				if(!queries.containsKey(lsd)){
+					// query was removed, ignoring update
+					Log.w(LOG_TAG, "Notification dismissed. No more updates for: " + lsd);
+					return;
 				}
+			
+				Thread.currentThread().setName("NotifUpdater_" + lsd);
 
-				if (!this.isRunning) {
-					break;
-				}
-
+				long updateStartTime = System.currentTimeMillis();
+				
 				Analytics.getInstance().notifServiceQuery(query.postQuery());
 				Map<String, BusArrivalInfo> resp = query.getNextArrivals();
 				if (query.isValid()
@@ -181,21 +226,49 @@ public class NotificationService extends IntentService implements Runnable {
 				} else {
 					this.updateError = true;
 				}
-			}
+				
+				publishNotificationCompat();
+				
+				long timeToWait = refreshFrequencyMillis(arrival.getMillis(0));
+				// time already passed while making the previous query
+				// we should subtract this from waiting for the next query.
+				long elapsedSinceLastUpdate = System.currentTimeMillis() - updateStartTime;
+				
+				if(elapsedSinceLastUpdate + 5000 < timeToWait){
+					timeToWait -= elapsedSinceLastUpdate;
+				} else {
+					timeToWait = 5000; // wait at least 5s
+				}
+				
+				setNextAlarm(timeToWait);
 		} catch (Exception e) {
 			Log.e(LOG_TAG, "" + e.getMessage(), e);
-		} finally {
 			NotificationManager mNotifManager;
 			mNotifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			mNotifManager.cancel(lsd.hashCode());
 		}
+	}
+	
+	private void setNextAlarm(long timeToWait){
+		// set-up an ALARM for updating the notification
+		Intent intent = new Intent(this, NotificationService.class);
+		intent.putExtra(ACTION_UPDATE, true);
+		intent.putExtra(EXTRA_DIRECTION, arrival.direction);
+		intent.putExtra(EXTRA_LINE_STOP_DIR, lsd);
+		intent.putExtra(EXTRA_WHEN_UPDATE, this.when);
+		PendingIntent pintent = PendingIntent.getService(NotificationService.this, new Random(System.currentTimeMillis()).nextInt(), intent, 0);
+		AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+		Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MILLISECOND, (int) timeToWait);
+		alarm.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pintent);
+		Log.w(LOG_TAG, "Next update for  " + lsd + " in " + timeToWait);
 	}
 
 	private void terminate() {
 		NotificationManager mNotifManager;
 		mNotifManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotifManager.cancel(lsd.hashCode());
-		this.isRunning = false;
+		this.isRunning.set(false);
 		Analytics.getInstance().onPush();
 	}
 
@@ -208,7 +281,7 @@ public class NotificationService extends IntentService implements Runnable {
 	}
 
 	/**
-	 * Return how many ms to sleep depending on next arrival. This allows to
+	 * Return how many milliseconds to sleep depending on next arrival. This allows to
 	 * refresh frequently when there is little time left until arrival, while
 	 * saving battery if the bus will arrive much later.
 	 * 
@@ -224,7 +297,7 @@ public class NotificationService extends IntentService implements Runnable {
 		} else if (msUntilArrival < 15 * 60 * 1000) {
 			return 60 * 1000; // 1min
 		} else {
-			return 5 * 60 * 1000; // 5min
+			return 3 * 60 * 1000; // 3min
 		}
 	}
 }

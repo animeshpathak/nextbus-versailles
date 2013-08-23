@@ -136,8 +136,9 @@ public abstract class BusArrivalQuery {
 
 						Intent notifIntent = new Intent(context,
 								NotificationService.class);
-						notifIntent.putExtra("LineStopDirection", lsd);
-						notifIntent.putExtra("direction",
+						notifIntent.putExtra(NotificationService.ACTION_NEW, true);
+						notifIntent.putExtra(NotificationService.EXTRA_LINE_STOP_DIR, lsd);
+						notifIntent.putExtra(NotificationService.EXTRA_DIRECTION,
 								entry.getValue().direction);
 						NotificationService.putQuery(lsd, BusArrivalQuery.this);
 						context.startService(notifIntent);
