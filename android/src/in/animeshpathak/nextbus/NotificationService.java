@@ -87,7 +87,8 @@ public class NotificationService extends IntentService {
 				publishNotificationCompat();
 				
 				// set-up an ALARM to update the notification 
-				setNextAlarm(refreshFrequencyMillis(arrival.getMillis(0)));
+				// we do this in 5s to be sure we have updated data
+				setNextAlarm(5000);
 			}
 		} else if (intent.getBooleanExtra(ACTION_UPDATE, false)) {
 			this.lsd = intent.getStringExtra(EXTRA_LINE_STOP_DIR);
