@@ -98,7 +98,7 @@ public class NextBusMain extends Activity {
 		setContentView(R.layout.main);
 
 		try {
-			busNet = new BusNetwork(this);
+			busNet = BusNetwork.getInstance(this);
 		} catch (Exception e) {
 			Log.e(LOG_TAG, e.getMessage(), e);
 			return;

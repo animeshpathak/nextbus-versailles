@@ -26,7 +26,15 @@
         </activity>
 
         <service
-            android:name="in.animeshpathak.nextbus.NotificationService"
+            android:name="in.animeshpathak.nextbus.notif.NotificationServiceAdd"
+            android:enabled="true"
+            android:exported="false" />
+        <service
+            android:name="in.animeshpathak.nextbus.notif.NotificationServiceUpdate"
+            android:enabled="true"
+            android:exported="false" />
+        <service
+            android:name="in.animeshpathak.nextbus.notif.NotificationServiceRemove"
             android:enabled="true"
             android:exported="false" />
         <service
