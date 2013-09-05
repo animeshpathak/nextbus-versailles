@@ -1,8 +1,9 @@
 package in.animeshpathak.nextbus.timetable;
 
 import in.animeshpathak.nextbus.Constants;
-import in.animeshpathak.nextbus.NotificationService;
 import in.animeshpathak.nextbus.R;
+import in.animeshpathak.nextbus.notif.NotificationServiceAdd;
+import in.animeshpathak.nextbus.notif.NotificationServiceBase;
 import in.animeshpathak.nextbus.timetable.data.BusLine;
 import in.animeshpathak.nextbus.timetable.data.BusStop;
 
@@ -127,20 +128,18 @@ public abstract class BusArrivalQuery {
 				theText.setOnLongClickListener(new OnLongClickListener() {
 					@Override
 					public boolean onLongClick(View v) {
-						// Line+Stop+Direction
-						String lsd = busLine.getCode() + busStop.getCode()
-								+ entry.getValue().direction;
-						if (NotificationService.notifExists(lsd)) {
+						if (NotificationServiceBase.notifExists(BusArrivalQuery.this, entry.getValue().direction)) {
+							// ignore notification request / already active
 							return true;
 						}
 
 						Intent notifIntent = new Intent(context,
-								NotificationService.class);
-						notifIntent.putExtra(NotificationService.ACTION_NEW, true);
-						notifIntent.putExtra(NotificationService.EXTRA_LINE_STOP_DIR, lsd);
-						notifIntent.putExtra(NotificationService.EXTRA_DIRECTION,
+								NotificationServiceAdd.class);
+						notifIntent.putExtra(NotificationServiceBase.ACTION_NEW, true);
+						notifIntent.putExtra(NotificationServiceBase.EXTRA_LINE, busLine.getCode());
+						notifIntent.putExtra(NotificationServiceBase.EXTRA_STOP, busStop.getCode());
+						notifIntent.putExtra(NotificationServiceBase.EXTRA_DIRECTION,
 								entry.getValue().direction);
-						NotificationService.putQuery(lsd, BusArrivalQuery.this);
 						context.startService(notifIntent);
 						return true;
 					}
@@ -260,5 +259,10 @@ public abstract class BusArrivalQuery {
 		HttpResponse response = httpclient.execute(httpget);
 		Log.d(LOG_TAG, String.format("Response for %s - %s", busLine, busStop));
 		return response;
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("{ Line: %s, Stop: %s, Valid: %b}", getBusLine().getName(), getBusStop().getName(), isValid());
 	}
 }

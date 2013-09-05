@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.json.JSONArray;
@@ -31,8 +32,16 @@ public class BusNetwork {
 
 	// (key: stop-code, value: stop-object)
 	private Map<String, BusStop> busStops = new TreeMap<String, BusStop>();
+	
+	private static AtomicReference<BusNetwork> singleton = new AtomicReference<BusNetwork>();
+	
+	public static BusNetwork getInstance(Context context) throws IOException, JSONException{
+		// instantiate if null
+		singleton.compareAndSet(null, new BusNetwork(context));
+		return singleton.get();
+	}
 
-	public BusNetwork(Context context) throws IOException, JSONException {
+	private BusNetwork(Context context) throws IOException, JSONException {
 		Resources resources = context.getResources();
 		AssetManager assetManager = resources.getAssets();
 		InputStream inputStream;
@@ -134,6 +143,15 @@ public class BusNetwork {
 		// Line code and name are the same for now
 		return busLines.get(line);
 	}
+	
+	/**
+	 * Line code and name are the same for now
+	 * @param lineCode
+	 * @return
+	 */
+	public BusLine getLineByCode(String lineCode) {
+		return getLineByName(lineCode);
+	}
 
 	public BusStop getStopByName(String stop) {
 		for (BusStop bs : busStops.values()) {
@@ -142,5 +160,9 @@ public class BusNetwork {
 			}
 		}
 		return null;
+	}
+	
+	public BusStop getStopByCode(String stopCode) {
+		return busStops.get(stopCode);
 	}
 }

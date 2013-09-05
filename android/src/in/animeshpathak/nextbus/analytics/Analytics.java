@@ -98,8 +98,16 @@ public class Analytics {
 	 * Request that all data be pushed using a separate Service
 	 */
 	public void onPush() {
-		SharedPreferences sharedPrefs = PreferenceManager
+		SharedPreferences sharedPrefs = null;
+		try{
+			// Android seems to throw NullPointerException here
+			sharedPrefs = PreferenceManager
 				.getDefaultSharedPreferences(context);
+		} catch (NullPointerException e){
+			Log.e(LOG_TAG, "Error getting preferences: " + e.getMessage());
+			return;
+		}
+		
 		boolean analyticsEanbled = sharedPrefs.getBoolean("analytics_checkbox",
 				false);
 
