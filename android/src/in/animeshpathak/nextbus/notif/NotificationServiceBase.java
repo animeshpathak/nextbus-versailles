@@ -4,11 +4,11 @@ import in.animeshpathak.nextbus.Constants;
 import in.animeshpathak.nextbus.NextBusMain;
 import in.animeshpathak.nextbus.R;
 import in.animeshpathak.nextbus.analytics.Analytics;
+import in.animeshpathak.nextbus.compat.Collections;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery;
 import in.animeshpathak.nextbus.timetable.BusArrivalQuery.BusArrivalInfo;
 
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
